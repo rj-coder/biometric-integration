@@ -3,8 +3,14 @@ package in.westerncoal.biometric.client.operation;
 import java.util.Date;
 import java.util.List;
 
+import org.springframework.boot.jackson.JsonComponent;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat.Feature;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import in.westerncoal.biometric.app.DeviceOperation;
 import lombok.Builder;
@@ -19,14 +25,13 @@ public class GetAllLogReply implements DeviceOperation {
 	public String sn;
 	public boolean result;
 	public int count;
-	@JsonFormat(shape = Shape.STRING,pattern = "yyyy-MM-dd",timezone = "Asia/Calcutta")
-	public Date from;
-	@JsonFormat(shape = Shape.STRING,pattern = "yyyy-MM-dd",timezone = "Asia/Calcutta")
-	public Date to;
-	public List<Record> record;
-	
-	public boolean isEmptyReply() {
-		return this.count == 0 || record.size() == 0 ;
+ 	public Long from;
+ 	public Long to;
+	 
+ 	public List<Record> record;
+ 	public boolean isEmptyReply() {
+		return this.count == 0 || record.size() == 0;
 	}
+ 	
+  
 }
-

@@ -6,15 +6,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import in.westerncoal.biometric.types.MessageType;
+import in.westerncoal.biometric.util.BioUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Message {
-	static ObjectMapper objectMapper = new ObjectMapper();
-
+ 
 	public static MessageType getMessageType(String message) {
 		try {
-			JsonNode jsonNode = objectMapper.readTree(message);
+			JsonNode jsonNode = BioUtil.getObjectMapper().readTree(message);
 
 			if (jsonNode.has("cmd"))
 				if (jsonNode.get("cmd").asText().compareTo("reg") == 0)
@@ -40,6 +40,7 @@ public class Message {
 		} catch (JsonMappingException e) {
 			return MessageType.UNKNOWN_MSG;
 		} catch (JsonProcessingException e) {
+			e.printStackTrace();
 			log.error("Invalid JSON Data {}", message);
 			return MessageType.UNKNOWN_MSG;
 		}

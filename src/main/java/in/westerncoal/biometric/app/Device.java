@@ -11,6 +11,7 @@ import in.westerncoal.biometric.server.operation.DeviceRegisterReply;
 import in.westerncoal.biometric.server.operation.GetAllLogReplyServerResponse;
 import in.westerncoal.biometric.server.operation.SendLogReply;
 import in.westerncoal.biometric.types.DeviceStatus;
+import in.westerncoal.biometric.types.MessageType;
 import in.westerncoal.biometric.util.BioUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -37,7 +38,7 @@ public class Device {
 			reply = BioUtil.getObjectMapper().writeValueAsString(deviceRegisterReply);
 			this.webSocket.send(reply);
 			biometricDevicePool.getDevice(serialNo).setDeviceOperationCompleted(true);
-			log.info("DeviceRegisterReply to {} [{}] message {} - success", serialNo, webSocket.getRemoteSocketAddress(), reply);
+			log.info("{}[{}] <- {}{}", serialNo, webSocket.getRemoteSocketAddress(), MessageType.DEVICE_INIT_REGISTER_REPLY_MSG,  reply);
 		} catch (WebsocketNotConnectedException e) {
 			biometricDevicePool.removeDevice(serialNo);			
 		} catch (JsonProcessingException e) {
@@ -52,7 +53,7 @@ public class Device {
 			String reply = BioUtil.getObjectMapper().writeValueAsString(sendLogReply);
 			conn.send(reply);
 			biometricDevicePool.getDevice(serialNo).setDeviceOperationCompleted(true);
-			log.info("SendLogReply to {} [{}] message {} - success", serialNo, webSocket.getRemoteSocketAddress(),
+			log.info("{}[{}] <- {}{}", serialNo, webSocket.getRemoteSocketAddress(),conn.getLocalSocketAddress(),
 					reply);
 		} catch (WebsocketNotConnectedException e) {
 			biometricDevicePool.get(serialNo).setDeviceStatus(DeviceStatus.DEVICE_INACTIVE);
@@ -67,8 +68,8 @@ public class Device {
 			String reply = BioUtil.getObjectMapper().writeValueAsString(getAllLogReplyServerResponse);
 			conn.send(reply);
 			biometricDevicePool.getDevice(serialNo).setDeviceOperationCompleted(true);
-			log.info("GetAllLogReplyServerResponse to {} [{}] message {} - success", serialNo,
-					webSocket.getRemoteSocketAddress(), reply);
+			log.info("{}[{}] <- {}{}", serialNo,conn.getRemoteSocketAddress(),
+					MessageType.DEVICE_GETALLLOG_REPLY_RESPONSE_MSG, reply);
 		} catch (WebsocketNotConnectedException e) {
 		} catch (JsonProcessingException e) {
 			log.error("JSON Parsing Exception {}", e);

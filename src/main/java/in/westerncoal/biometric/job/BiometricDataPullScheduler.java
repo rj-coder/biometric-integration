@@ -15,7 +15,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import in.westerncoal.biometric.app.Device;
 import in.westerncoal.biometric.server.operation.GetAllLog;
 import in.westerncoal.biometric.types.DeviceStatus;
-
+import in.westerncoal.biometric.types.MessageType;
 import in.westerncoal.biometric.util.BioUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,7 +28,7 @@ public class BiometricDataPullScheduler {
 	@Value("${terminal.data.pull.mode}")
 	private char terminalDataPullMode;
 
-//	@Scheduled(fixedDelay = 10000, initialDelay = 0)
+ 	@Scheduled(fixedDelay = 20000, initialDelay = 0)
 	public void pullData() {
 		WebSocket ws;
 		DeviceStatus deviceStatus;
@@ -59,8 +59,8 @@ public class BiometricDataPullScheduler {
 					getAllLog.setTo(toDate);
 					String getAllLogJson = BioUtil.getObjectMapper().writeValueAsString(getAllLog);
 					ws.send(getAllLogJson);
-					log.info("Server {} pull from terminal {}[{}]", ws.getLocalSocketAddress(),
-							ws.getRemoteSocketAddress(), sn);
+					log.info("{}[{}] <- {}{}", 
+							sn,ws.getRemoteSocketAddress(),MessageType.DEVICE_GETALLLOG_MSG,getAllLogJson );
 				} catch (JsonProcessingException | ParseException e) {
 					log.error("Parsing Error {}", e);
 				} catch (WebsocketNotConnectedException e2) {

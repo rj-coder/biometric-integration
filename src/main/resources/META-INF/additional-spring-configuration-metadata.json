@@ -1,5 +1,12 @@
-{"properties": [{
-  "name": "terminal.data.pull.mode",
-  "type": "java.lang.String",
-  "description": "A description for 'terminal.data.pull.mode'"
-}]}
+{"properties": [
+  {
+    "name": "terminal.data.pull.mode",
+    "type": "java.lang.Character",
+    "description": "biometric terminal pull mode"
+  },
+  {
+    "name": "websocket.port",
+    "type": "java.lang.Number",
+    "description": "Websocket port number"
+  }
+]}
