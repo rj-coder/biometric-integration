@@ -31,6 +31,6 @@ public class TerminalSendLog {
 	private Timestamp sendTime;
 	private String sendCommand;
 
-	@ManyToOne(cascade = CascadeType.MERGE)
+	@ManyToOne(cascade = CascadeType.PERSIST)
 	public Terminal terminal;
 }

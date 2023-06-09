@@ -11,6 +11,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,10 +36,8 @@ public class Terminal {
 	private Timestamp lastTimestamp;
 
 	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name="server_log",joinColumns = @JoinColumn(referencedColumnName = "bioTerminalSn"), inverseJoinColumns = @JoinColumn(referencedColumnName = "pullId")
-	// , uniqueConstraints = @UniqueConstraint(columnNames = {
-	// "server_pull_log_list_pull_id", "bio_terminal_list_bio_terminal_sn" })
-	)
+	@JoinTable(name = "server_log", joinColumns = @JoinColumn(referencedColumnName = "bioTerminalSn"), inverseJoinColumns = @JoinColumn(referencedColumnName = "pullId"),
+	uniqueConstraints = @UniqueConstraint(columnNames = {"TERMINAL_LIST_BIO_TERMINAL_SN","SERVER_LOG_PULL_ID"}))
 	@ToString.Exclude
 	public List<ServerPullLog> serverLog;
 

@@ -3,6 +3,7 @@ package in.westerncoal.biometric.app;
 import java.net.InetSocketAddress;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Optional;
 
 import org.java_websocket.WebSocket;
@@ -20,10 +21,13 @@ import in.westerncoal.biometric.client.operation.GetAllLogReply;
 import in.westerncoal.biometric.client.operation.SendLog;
 import in.westerncoal.biometric.job.BiometricDevicePool;
 import in.westerncoal.biometric.model.Terminal;
+import in.westerncoal.biometric.model.Attendance;
+import in.westerncoal.biometric.model.AttendanceKey;
 import in.westerncoal.biometric.model.BioTerminalStatus;
 import in.westerncoal.biometric.model.TerminalSendLog;
 import in.westerncoal.biometric.server.operation.DeviceRegisterReply;
 import in.westerncoal.biometric.server.operation.SendLogReply;
+import in.westerncoal.biometric.service.AttendanceService;
 import in.westerncoal.biometric.service.BioTerminalService;
 import in.westerncoal.biometric.service.TerminalSendLogService;
 import in.westerncoal.biometric.types.MessageType;
@@ -40,6 +44,9 @@ public class BiometricIntegrationServer extends WebSocketServer {
 	@Autowired
 	BioTerminalService bioTerminalService;
 
+	@Autowired
+	AttendanceService attendanceService;
+	
 	@Autowired
 	TerminalSendLogService terminalSendLogService;
 
@@ -128,7 +135,9 @@ public class BiometricIntegrationServer extends WebSocketServer {
 			Terminal terminal = Terminal.builder().bioTerminalSn(device.getSerialNo()).build();
 			TerminalSendLog terminalSendLog = TerminalSendLog.builder().sendCommand(sendLog.getCmd())
 					.terminal(terminal).sendTime(new Timestamp(System.currentTimeMillis())).build();
-			terminalSendLogService.saveTerminalSendLog(terminalSendLog);
+			List<Attendance> attendanceList = sendLog.getAttendanceList(terminal);
+			attendanceService.saveAttendances(attendanceList);
+ 			terminalSendLogService.saveTerminalSendLog(terminalSendLog);
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
 		} catch (JsonProcessingException e) {
