@@ -28,7 +28,7 @@ public class BiometricDataPullScheduler {
 	@Value("${terminal.data.pull.mode}")
 	private char terminalDataPullMode;
 
- 	@Scheduled(fixedDelay = 20000, initialDelay = 0)
+ 	//@Scheduled(fixedDelay = 20000, initialDelay = 0)
 	public void pullData() {
 		WebSocket ws;
 		DeviceStatus deviceStatus;

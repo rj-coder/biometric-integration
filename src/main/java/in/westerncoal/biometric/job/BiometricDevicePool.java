@@ -1,6 +1,7 @@
 package in.westerncoal.biometric.job;
 
 import java.util.HashMap;
+import java.util.Optional;
 
 import org.java_websocket.WebSocket;
 import org.springframework.context.annotation.Bean;
@@ -23,12 +24,24 @@ public class BiometricDevicePool extends HashMap<String, Device> {
 		return get(serialNo);
 	}
 
-	public void removeDevice(WebSocket conn) {
+	public Optional<Device> removeDevice(WebSocket conn) {
 		for (String sn : this.keySet()) {
-			if (this.get(sn).getWebSocket() != conn) {
-				this.remove(sn);
-			}
+			if (this.get(sn).getWebSocket() == conn) {
+				return Optional.ofNullable(this.remove(sn));
+			} else
+				continue;
 		}
+		return Optional.empty();
+	}
+
+	public String getDeviceSn(WebSocket conn) {
+		for (String sn : this.keySet()) {
+			if (this.get(sn).getWebSocket() == conn) {
+				return sn;
+			} else
+				continue;
+		}
+		return null;
 	}
 
 	public void removeDevice(String sn) {

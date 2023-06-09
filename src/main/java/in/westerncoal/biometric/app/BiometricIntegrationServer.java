@@ -1,7 +1,9 @@
 package in.westerncoal.biometric.app;
 
 import java.net.InetSocketAddress;
+import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Optional;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -17,22 +19,33 @@ import in.westerncoal.biometric.client.operation.DeviceRegister;
 import in.westerncoal.biometric.client.operation.GetAllLogReply;
 import in.westerncoal.biometric.client.operation.SendLog;
 import in.westerncoal.biometric.job.BiometricDevicePool;
+import in.westerncoal.biometric.model.Terminal;
+import in.westerncoal.biometric.model.BioTerminalStatus;
+import in.westerncoal.biometric.model.TerminalSendLog;
 import in.westerncoal.biometric.server.operation.DeviceRegisterReply;
 import in.westerncoal.biometric.server.operation.SendLogReply;
+import in.westerncoal.biometric.service.BioTerminalService;
+import in.westerncoal.biometric.service.TerminalSendLogService;
 import in.westerncoal.biometric.types.MessageType;
 import in.westerncoal.biometric.util.BioUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Configuration
-public class BioServerApp extends WebSocketServer {
+public class BiometricIntegrationServer extends WebSocketServer {
 
 	@Autowired
 	private BiometricDevicePool biometricDevicePool;
 
+	@Autowired
+	BioTerminalService bioTerminalService;
+
+	@Autowired
+	TerminalSendLogService terminalSendLogService;
+
 	private ObjectMapper objectMapper;
 
-	public BioServerApp(@Value("${websocket.port}") int WS_PORT) {
+	public BiometricIntegrationServer(@Value("${websocket.port}") int WS_PORT) {
 		super(new InetSocketAddress(WS_PORT));
 		objectMapper = BioUtil.getObjectMapper();
 		this.start();
@@ -45,8 +58,13 @@ public class BioServerApp extends WebSocketServer {
 
 	@Override
 	public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-		biometricDevicePool.removeDevice(conn);
-		log.info("Device Closed: {}", conn.getRemoteSocketAddress());
+		Optional<Device> device = biometricDevicePool.removeDevice(conn);
+		if (device.isPresent()) {
+			bioTerminalService.updateBioTerminal(device.get().getSerialNo(), BioTerminalStatus.INACTIVE);
+			log.info("{}[{}} >-< {}", device.get().getSerialNo(), conn.getRemoteSocketAddress(),
+					conn.getLocalSocketAddress());
+		} else
+			log.info("Device Closed: {}", conn.getRemoteSocketAddress());
 
 	}
 
@@ -107,6 +125,10 @@ public class BioServerApp extends WebSocketServer {
 			log.info("{}[{}] -> {}{}", device.getSerialNo(), conn.getRemoteSocketAddress(),
 					MessageType.DEVICE_SENDLOG_MSG, message);
 			device.doSendLogReply(sendLogReply, conn, biometricDevicePool);
+			Terminal terminal = Terminal.builder().bioTerminalSn(device.getSerialNo()).build();
+			TerminalSendLog terminalSendLog = TerminalSendLog.builder().sendCommand(sendLog.getCmd())
+					.terminal(terminal).sendTime(new Timestamp(System.currentTimeMillis())).build();
+			terminalSendLogService.saveTerminalSendLog(terminalSendLog);
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
 		} catch (JsonProcessingException e) {
@@ -117,8 +139,8 @@ public class BioServerApp extends WebSocketServer {
 	private void deviceRegister(WebSocket conn, String message) {
 		try {
 			DeviceRegister deviceRegister = objectMapper.readValue(message, DeviceRegister.class);
-			log.info("{}[{}] -> {}{}",  deviceRegister.getSn(),
-					conn.getRemoteSocketAddress(),MessageType.DEVICE_INIT_REGISTER_MSG,message);
+			log.info("{}[{}] -> {}{}", deviceRegister.getSn(), conn.getRemoteSocketAddress(),
+					MessageType.DEVICE_INIT_REGISTER_MSG, message);
 			DeviceRegisterReply deviceRegisterReply = new DeviceRegisterReply(
 					BioUtil.getDateTimeFormatter().format(Calendar.getInstance().getTime()));
 			Device device = deviceRegister.addDevice(deviceRegister.getSn(), conn, biometricDevicePool,
@@ -126,6 +148,10 @@ public class BioServerApp extends WebSocketServer {
 			device.doDeviceRegisterReply(deviceRegisterReply, biometricDevicePool);
 			log.info("{}[{}] <-> {}", device.getSerialNo(), conn.getRemoteSocketAddress(),
 					conn.getLocalSocketAddress());
+			Terminal bioTerminal = Terminal.builder().bioTerminalSn(deviceRegister.getSn())
+					.bioTerminalStatus(BioTerminalStatus.ACTIVE).build();
+			bioTerminalService.updateBioTerminal(bioTerminal);
+
 		} catch (JsonProcessingException e3) {
 			log.error("Invalid JSON Data from terminal {}", message, conn.getRemoteSocketAddress());
 		}

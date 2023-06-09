@@ -1,8 +1,6 @@
 package in.westerncoal.biometric.app;
 
 import org.java_websocket.WebSocket;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import in.westerncoal.biometric.job.BiometricDevicePool;
 import in.westerncoal.biometric.types.DeviceStatus;
 
@@ -18,7 +16,8 @@ public interface DeviceOperation {
 	public default Device updateDevice(String sn, WebSocket ws, BiometricDevicePool biometricDevicePool,
 			DeviceOperation deviceOperation, boolean isCompleted) {
 
-		return biometricDevicePool.put(sn,
-				new Device(sn, ws, DeviceStatus.DEVICE_ACTIVE, deviceOperation, isCompleted));
+		Device device = new Device(sn, ws, DeviceStatus.DEVICE_ACTIVE, deviceOperation, isCompleted);
+		biometricDevicePool.put(sn, device);
+		return device;
 	}
 }
