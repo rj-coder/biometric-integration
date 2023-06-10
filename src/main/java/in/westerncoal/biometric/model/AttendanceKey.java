@@ -4,7 +4,6 @@ import java.sql.Date;
 import java.sql.Time;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,5 +23,4 @@ public class AttendanceKey {
 	private Integer personnelNumber;
 	private Date punchDate;
 	private Time punchTime;
-
 }

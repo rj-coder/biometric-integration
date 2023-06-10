@@ -133,11 +133,11 @@ public class BiometricIntegrationServer extends WebSocketServer {
 					MessageType.DEVICE_SENDLOG_MSG, message);
 			device.doSendLogReply(sendLogReply, conn, biometricDevicePool);
 			Terminal terminal = Terminal.builder().bioTerminalSn(device.getSerialNo()).build();
-			TerminalSendLog terminalSendLog = TerminalSendLog.builder().sendCommand(sendLog.getCmd())
-					.terminal(terminal).sendTime(new Timestamp(System.currentTimeMillis())).build();
-			List<Attendance> attendanceList = sendLog.getAttendanceList(terminal);
+			TerminalSendLog terminalSendLog = TerminalSendLog.builder().sendCommand(sendLog.getCmd()).terminal(terminal)
+					.sendTime(new Timestamp(System.currentTimeMillis())).build();
+			List<Attendance> attendanceList = sendLog.getAttendanceList(terminal,terminalSendLog);
 			attendanceService.saveAttendances(attendanceList);
- 			terminalSendLogService.saveTerminalSendLog(terminalSendLog);
+ 			//terminalSendLogService.saveTerminalSendLog(terminalSendLog);
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
 		} catch (JsonProcessingException e) {

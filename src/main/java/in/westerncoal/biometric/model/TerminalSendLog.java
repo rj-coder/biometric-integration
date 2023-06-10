@@ -4,10 +4,9 @@ import java.sql.Timestamp;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.UuidGenerator.Style;
-
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -17,7 +16,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "terminal_send",schema="bio")
+@Table(name = "terminal_send", schema = "bio")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -26,11 +25,12 @@ import lombok.Setter;
 public class TerminalSendLog {
 	@Id
 	@UuidGenerator(style = Style.RANDOM)
- 	private String sendId;
+	private String sendId;
 	@CreationTimestamp
 	private Timestamp sendTime;
 	private String sendCommand;
 
-	@ManyToOne(cascade = CascadeType.PERSIST)
+	@ManyToOne
+	@JoinColumn(name="terminal_id")
 	public Terminal terminal;
 }

@@ -6,6 +6,7 @@ import java.util.List;
 import in.westerncoal.biometric.app.DeviceOperation;
 import in.westerncoal.biometric.model.AttendanceKey;
 import in.westerncoal.biometric.model.Terminal;
+import in.westerncoal.biometric.model.TerminalSendLog;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
@@ -21,12 +22,14 @@ public class SendLog implements DeviceOperation {
 	private int logindex;
 	private List<Record> record;
 
-	public List<Attendance> getAttendanceList(Terminal terminal) {
+	public List<Attendance> getAttendanceList(Terminal terminal, TerminalSendLog terminalSendLog) {
 		List<Attendance> attendanceList = new ArrayList<Attendance>();
 		for (Record rec : record) {
 			AttendanceKey attendanceKey = new AttendanceKey(rec.getEnrollid(),
 					new java.sql.Date(rec.getTime().getTime()), new java.sql.Time(rec.getTime().getTime()));
-			Attendance attendance = Attendance.builder().AttendanceKey(attendanceKey).terminal(terminal).build();
+
+			Attendance attendance = Attendance.builder().AttendanceKey(attendanceKey).terminal(terminal)
+					.terminalSendLog(terminalSendLog).build();
 			attendanceList.add(attendance);
 		}
 		return attendanceList;

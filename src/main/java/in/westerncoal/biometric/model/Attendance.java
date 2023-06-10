@@ -1,37 +1,40 @@
 package in.westerncoal.biometric.model;
 
-import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Value;
 
 @Entity
-@Table(name = "attendance",schema="bio")
- @Builder
+@Table(name = "attendance", schema = "bio")
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 public class Attendance {
 	@EmbeddedId
 	private AttendanceKey AttendanceKey;
-	@Column
+
 	@Builder.Default
 	private boolean uploadFlag = false;
 
-	@OneToOne(optional = true,fetch = FetchType.LAZY)
-	private ServerPullLog serverLog;
-	
-	@OneToOne(optional = true,fetch = FetchType.LAZY)
-	private TerminalSendLog terminalLog;
-
-	@OneToOne(optional = false,fetch = FetchType.LAZY)
-	private Terminal terminal;
+ 	@ManyToOne
+ 	@JoinColumn(name="pull_id")
+  	private ServerPullLog serverPullLog;
+ 	
+ 	@ManyToOne(cascade = CascadeType.ALL)
+ 	@JoinColumn(name="terminal_id")
+  	private Terminal terminal;
+  
+	@OneToOne( cascade=CascadeType.ALL)
+	@JoinColumn(name="send_id")
+	private TerminalSendLog terminalSendLog;
 
 }
