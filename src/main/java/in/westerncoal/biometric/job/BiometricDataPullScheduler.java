@@ -13,7 +13,10 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import in.westerncoal.biometric.app.Device;
+import in.westerncoal.biometric.model.ServerPull;
 import in.westerncoal.biometric.server.operation.GetAllLog;
+import in.westerncoal.biometric.service.AttendanceService;
+import in.westerncoal.biometric.service.ServerPullLogService;
 import in.westerncoal.biometric.types.DeviceStatus;
 import in.westerncoal.biometric.types.MessageType;
 import in.westerncoal.biometric.util.BioUtil;
@@ -25,10 +28,16 @@ public class BiometricDataPullScheduler {
 	@Autowired
 	BiometricDevicePool biometricDevicePool;
 
+	@Autowired
+	AttendanceService attendanceService;
+	
+	@Autowired
+	ServerPullLogService serverPullLogService;
+	
 	@Value("${terminal.data.pull.mode}")
 	private char terminalDataPullMode;
 
- 	//@Scheduled(fixedDelay = 20000, initialDelay = 0)
+ 	@Scheduled(fixedDelay = 5000, initialDelay = 0)
 	public void pullData() {
 		WebSocket ws;
 		DeviceStatus deviceStatus;
@@ -58,13 +67,15 @@ public class BiometricDataPullScheduler {
 					getAllLog.setFrom(fromDate);
 					getAllLog.setTo(toDate);
 					String getAllLogJson = BioUtil.getObjectMapper().writeValueAsString(getAllLog);
+					ServerPull serverPullLog = ServerPull.builder().serverId(ws.getRemoteSocketAddress().toString().substring(1)).pullCommand(getAllLogJson).pullType(terminalDataPullMode).build();
+					serverPullLogService.saveServerPullLog(serverPullLog);
 					ws.send(getAllLogJson);
 					log.info("{}[{}] <- {}{}", 
 							sn,ws.getRemoteSocketAddress(),MessageType.DEVICE_GETALLLOG_MSG,getAllLogJson );
 				} catch (JsonProcessingException | ParseException e) {
 					log.error("Parsing Error {}", e);
 				} catch (WebsocketNotConnectedException e2) {
-					biometricDevicePool.getDevice(sn).setDeviceStatus(DeviceStatus.DEVICE_INACTIVE);
+					biometricDevicePool.setDeviceInactive(ws);
 				}
 
 			} else {

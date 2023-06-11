@@ -3,6 +3,7 @@ package in.westerncoal.biometric.model;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -25,16 +26,16 @@ public class Attendance {
 	@Builder.Default
 	private boolean uploadFlag = false;
 
- 	@ManyToOne
- 	@JoinColumn(name="pull_id")
-  	private ServerPullLog serverPullLog;
- 	
- 	@ManyToOne(cascade = CascadeType.ALL)
- 	@JoinColumn(name="terminal_id")
-  	private Terminal terminal;
-  
-	@OneToOne( cascade=CascadeType.ALL)
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "pull_id")
+	private ServerPull serverPullLog;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "terminal_id")
+	private Terminal terminal;
+
+	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name="send_id")
-	private TerminalSendLog terminalSendLog;
+ 	public TerminalSend terminalSendLog;
 
 }

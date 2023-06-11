@@ -1,5 +1,5 @@
 package in.westerncoal.biometric.model;
 
-public enum BioTerminalStatus {
+public enum TerminalStatus {
 	INACTIVE,ACTIVE
 }

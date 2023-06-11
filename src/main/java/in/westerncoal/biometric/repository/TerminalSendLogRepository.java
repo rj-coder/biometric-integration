@@ -3,9 +3,9 @@ package in.westerncoal.biometric.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import in.westerncoal.biometric.model.TerminalSendLog;
+import in.westerncoal.biometric.model.TerminalSend;
 
 @Repository
-public interface TerminalSendLogRepository extends JpaRepository<TerminalSendLog, Long> {
+public interface TerminalSendLogRepository extends JpaRepository<TerminalSend, Long> {
 
 }

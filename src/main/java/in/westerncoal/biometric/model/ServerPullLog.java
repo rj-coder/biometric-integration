@@ -1,32 +1,34 @@
 package in.westerncoal.biometric.model;
 
-import java.sql.Timestamp;
-import org.hibernate.annotations.UuidGenerator;
-import org.hibernate.annotations.UuidGenerator.Style;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Value;
 
 @Entity
-@Table(name = "server_pull", schema = "bio")
-@Value
-@Builder
-@AllArgsConstructor
-@Data
+@Table(name = "server_pull_log")
 public class ServerPullLog {
-	@Id
-	@UuidGenerator(style = Style.RANDOM)
-	private String pullId;
-	private String serverId;
-	private Timestamp pullTime;
-	private String pullCommand;
-	private Character pullType;
-//
-//	@ManyToMany(mappedBy = "serverLog")
-//	public List<Terminal> terminalList;
+
+	@EmbeddedId
+	ServerPullLogKey serverPullLogKey;
+	
+	PullStatus pullStatus;
+	
+	
+	@MapsId("pullId")
+	@ManyToOne
+	@JoinColumn(name = "pull_id")
+	ServerPull serverPull;
+
+	@MapsId("terminalId")
+	@ManyToOne
+	@JoinColumn(name = "terminal_id")
+	Terminal terminal;
+	
+	
 
 }

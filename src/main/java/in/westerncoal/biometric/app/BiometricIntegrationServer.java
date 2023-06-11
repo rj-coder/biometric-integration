@@ -15,20 +15,18 @@ import org.springframework.context.annotation.Configuration;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import in.westerncoal.biometric.client.operation.DeviceRegister;
 import in.westerncoal.biometric.client.operation.GetAllLogReply;
 import in.westerncoal.biometric.client.operation.SendLog;
 import in.westerncoal.biometric.job.BiometricDevicePool;
 import in.westerncoal.biometric.model.Terminal;
 import in.westerncoal.biometric.model.Attendance;
-import in.westerncoal.biometric.model.AttendanceKey;
-import in.westerncoal.biometric.model.BioTerminalStatus;
-import in.westerncoal.biometric.model.TerminalSendLog;
+import in.westerncoal.biometric.model.TerminalStatus;
+import in.westerncoal.biometric.model.TerminalSend;
 import in.westerncoal.biometric.server.operation.DeviceRegisterReply;
 import in.westerncoal.biometric.server.operation.SendLogReply;
 import in.westerncoal.biometric.service.AttendanceService;
-import in.westerncoal.biometric.service.BioTerminalService;
+import in.westerncoal.biometric.service.TerminalService;
 import in.westerncoal.biometric.service.TerminalSendLogService;
 import in.westerncoal.biometric.types.MessageType;
 import in.westerncoal.biometric.util.BioUtil;
@@ -42,11 +40,11 @@ public class BiometricIntegrationServer extends WebSocketServer {
 	private BiometricDevicePool biometricDevicePool;
 
 	@Autowired
-	BioTerminalService bioTerminalService;
+	AttendanceService attendanceService;
 
 	@Autowired
-	AttendanceService attendanceService;
-	
+	TerminalService terminalService;
+
 	@Autowired
 	TerminalSendLogService terminalSendLogService;
 
@@ -65,12 +63,11 @@ public class BiometricIntegrationServer extends WebSocketServer {
 
 	@Override
 	public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-		Optional<Device> device = biometricDevicePool.removeDevice(conn);
-		if (device.isPresent()) {
-			bioTerminalService.updateBioTerminal(device.get().getSerialNo(), BioTerminalStatus.INACTIVE);
+		Optional<Device> device = biometricDevicePool.setDeviceInactive(conn);
+		if (device.isPresent())
 			log.info("{}[{}} >-< {}", device.get().getSerialNo(), conn.getRemoteSocketAddress(),
 					conn.getLocalSocketAddress());
-		} else
+		else
 			log.info("Device Closed: {}", conn.getRemoteSocketAddress());
 
 	}
@@ -109,7 +106,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 			GetAllLogReply getAllLogReply = objectMapper.readValue(message, GetAllLogReply.class);
 			log.info("{}[{}] -> {}{}", getAllLogReply.getSn(), conn.getRemoteSocketAddress(),
 					MessageType.DEVICE_GETALLLOG_REPLY_MSG, message);
-			Device device = getAllLogReply.updateDevice(getAllLogReply.getSn(), conn, biometricDevicePool,
+			Device device = getAllLogReply.doDeviceAction(getAllLogReply.getSn(), conn, biometricDevicePool,
 					getAllLogReply, false);
 			if (getAllLogReply.isEmptyReply())
 				log.warn("{}[{}] -> {} completed", device.getSerialNo(), conn.getRemoteSocketAddress(),
@@ -128,16 +125,16 @@ public class BiometricIntegrationServer extends WebSocketServer {
 			SendLog sendLog = objectMapper.readValue(message, SendLog.class);
 			SendLogReply sendLogReply = new SendLogReply(true, sendLog.getCount(), sendLog.getLogindex(),
 					BioUtil.getDateTimeFormatter().format(Calendar.getInstance().getTime()), 1);
-			Device device = sendLog.updateDevice(sendLog.getSn(), conn, biometricDevicePool, sendLogReply, false);
+			Device device = sendLog.doDeviceAction(sendLog.getSn(), conn, biometricDevicePool, sendLogReply, false);
 			log.info("{}[{}] -> {}{}", device.getSerialNo(), conn.getRemoteSocketAddress(),
 					MessageType.DEVICE_SENDLOG_MSG, message);
 			device.doSendLogReply(sendLogReply, conn, biometricDevicePool);
-			Terminal terminal = Terminal.builder().bioTerminalSn(device.getSerialNo()).build();
-			TerminalSendLog terminalSendLog = TerminalSendLog.builder().sendCommand(sendLog.getCmd()).terminal(terminal)
+			Terminal terminal = Terminal.builder().terminalId(device.getSerialNo()).build();
+			TerminalSend terminalSendLog = TerminalSend.builder().sendCommand(sendLog.getCmd())
 					.sendTime(new Timestamp(System.currentTimeMillis())).build();
-			List<Attendance> attendanceList = sendLog.getAttendanceList(terminal,terminalSendLog);
+			terminalSendLogService.saveTerminalSendLog(terminalSendLog);
+			List<Attendance> attendanceList = sendLog.getAttendanceList(terminal, terminalSendLog);
 			attendanceService.saveAttendances(attendanceList);
- 			//terminalSendLogService.saveTerminalSendLog(terminalSendLog);
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
 		} catch (JsonProcessingException e) {
@@ -152,15 +149,14 @@ public class BiometricIntegrationServer extends WebSocketServer {
 					MessageType.DEVICE_INIT_REGISTER_MSG, message);
 			DeviceRegisterReply deviceRegisterReply = new DeviceRegisterReply(
 					BioUtil.getDateTimeFormatter().format(Calendar.getInstance().getTime()));
-			Device device = deviceRegister.addDevice(deviceRegister.getSn(), conn, biometricDevicePool,
+			Device device = deviceRegister.doDeviceAction(deviceRegister.getSn(), conn, biometricDevicePool,
 					deviceRegisterReply, false);
 			device.doDeviceRegisterReply(deviceRegisterReply, biometricDevicePool);
 			log.info("{}[{}] <-> {}", device.getSerialNo(), conn.getRemoteSocketAddress(),
 					conn.getLocalSocketAddress());
-			Terminal bioTerminal = Terminal.builder().bioTerminalSn(deviceRegister.getSn())
-					.bioTerminalStatus(BioTerminalStatus.ACTIVE).build();
-			bioTerminalService.updateBioTerminal(bioTerminal);
-
+			Terminal bioTerminal = Terminal.builder().terminalId(deviceRegister.getSn())
+					.terminalStatus(TerminalStatus.ACTIVE).build();
+			terminalService.updateTerminal(bioTerminal);
 		} catch (JsonProcessingException e3) {
 			log.error("Invalid JSON Data from terminal {}", message, conn.getRemoteSocketAddress());
 		}
@@ -169,7 +165,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 	@Override
 	public void onError(WebSocket conn, Exception ex) {
 		if (biometricDevicePool != null)
-			biometricDevicePool.removeDevice(conn);
+			biometricDevicePool.setDeviceInactive(conn);
 		log.error("Server communication error {} with exception: {}", conn, ex);
 	}
 

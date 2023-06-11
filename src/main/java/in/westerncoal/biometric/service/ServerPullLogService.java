@@ -2,9 +2,9 @@ package in.westerncoal.biometric.service;
 
 import org.springframework.stereotype.Component;
 
-import in.westerncoal.biometric.model.ServerPullLog;
+import in.westerncoal.biometric.model.ServerPull;
 
 @Component
 public interface ServerPullLogService {
-	  ServerPullLog saveServerPullLog(ServerPullLog serverPullLog);
+	  ServerPull saveServerPullLog(ServerPull serverPullLog);
 }
