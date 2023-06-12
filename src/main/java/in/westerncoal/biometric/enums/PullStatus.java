@@ -1,4 +1,4 @@
-package in.westerncoal.biometric.model;
+package in.westerncoal.biometric.enums;
 
 public enum PullStatus {
 	IN_PROGRESS,

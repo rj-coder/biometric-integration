@@ -20,19 +20,22 @@ public class TerminalServiceImpl implements TerminalService {
 	EntityManager em;
 
 	@Override
+	@Transactional
 	public Terminal updateTerminal(Terminal terminal) {
 		return terminalRepository.save(terminal);
 
 	}
 
 	@Override
+	@Transactional
 	public void updateBioTerminal(String bioTerminalSn, TerminalStatus bioTerminalStatus) {
 		Terminal bioTerminal = Terminal.builder().terminalId(bioTerminalSn).terminalStatus(bioTerminalStatus)
 				.build();
 		terminalRepository.save(bioTerminal);
 	}
 
-	@Override
+	@Override	
+	@Transactional
 	public void setTerminalInactive(String serialNo) {		
 		terminalRepository.update(serialNo);
 	}

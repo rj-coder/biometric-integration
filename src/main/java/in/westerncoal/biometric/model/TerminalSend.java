@@ -35,5 +35,7 @@ public class TerminalSend {
 	private Timestamp sendTime;
 	private String sendCommand;
 	
-//
+	@OneToOne
+	@JoinColumn(name="terminal_id")
+	private Terminal terminal;
 }

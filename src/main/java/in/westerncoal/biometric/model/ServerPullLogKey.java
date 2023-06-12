@@ -1,20 +1,22 @@
 package in.westerncoal.biometric.model;
 
-import java.io.Serializable;
+import java.util.UUID;
 
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.IdClass;
-import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Value;
+import lombok.ToString;
 
 @Embeddable
-@Data
 @NoArgsConstructor
+@Builder
+@AllArgsConstructor
+@ToString
 public class ServerPullLogKey {
 
 	private String pullId;
+	
 	private String terminalId;
 }

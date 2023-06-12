@@ -83,13 +83,13 @@ public class BiometricIntegrationServer extends WebSocketServer {
 			break;
 		}
 		case DEVICE_SENDLOG_MSG: {
-			sendLog(conn, message);
+			//sendLog(conn, message);
 			break;
 		}
 		case DEVICE_SENDUSER_MSG:
 			break;
 		case DEVICE_GETALLLOG_REPLY_MSG: {
-			getAllLogReply(conn, message);
+			//getAllLogReply(conn, message);
 			break;
 		}
 		case UNKNOWN_MSG: {
