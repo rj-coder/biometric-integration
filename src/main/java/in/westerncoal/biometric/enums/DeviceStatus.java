@@ -1,4 +1,4 @@
-package in.westerncoal.biometric.types;
+package in.westerncoal.biometric.enums;
 
 public enum DeviceStatus {
 	DEVICE_ACTIVE,

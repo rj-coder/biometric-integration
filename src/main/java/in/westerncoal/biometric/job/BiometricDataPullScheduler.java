@@ -13,14 +13,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import in.westerncoal.biometric.app.OperationType;
+import in.westerncoal.biometric.enums.OperationType;
+import in.westerncoal.biometric.enums.TerminalOperationStatus;
 import in.westerncoal.biometric.model.ServerPull;
 import in.westerncoal.biometric.model.ServerPullLog;
 import in.westerncoal.biometric.model.ServerPullLogKey;
 import in.westerncoal.biometric.model.Terminal;
 import in.westerncoal.biometric.model.TerminalOperationCache;
 import in.westerncoal.biometric.model.TerminalOperationLog;
-import in.westerncoal.biometric.model.TerminalOperationStatus;
 import in.westerncoal.biometric.server.operation.GetAllLog;
 import in.westerncoal.biometric.service.AttendanceService;
 import in.westerncoal.biometric.service.ServerPullLogService;

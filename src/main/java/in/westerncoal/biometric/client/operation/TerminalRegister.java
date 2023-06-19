@@ -2,7 +2,7 @@ package in.westerncoal.biometric.client.operation;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import in.westerncoal.biometric.types.MessageType;
+import in.westerncoal.biometric.enums.MessageType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;

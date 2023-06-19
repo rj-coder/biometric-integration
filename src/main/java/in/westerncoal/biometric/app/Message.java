@@ -4,7 +4,8 @@ import org.java_websocket.WebSocket;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import in.westerncoal.biometric.types.MessageType;
+
+import in.westerncoal.biometric.enums.MessageType;
 import in.westerncoal.biometric.util.BioUtil;
 import lombok.extern.slf4j.Slf4j;
 

@@ -7,24 +7,18 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.UuidGenerator.Style;
 
-import in.westerncoal.biometric.app.OperationType;
-import in.westerncoal.biometric.types.MessageType;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
+import in.westerncoal.biometric.enums.OperationType;
+import in.westerncoal.biometric.enums.TerminalOperationStatus;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Value;
 
 @Entity
 @Table(name = "terminal_operation_log")
@@ -58,7 +52,6 @@ public class TerminalOperationLog extends Timestamps {
 	@Builder.Default
 	private long recordCount = 0;
 
-	
 	@Builder.Default
 	private long recordFetched = 0;
 
@@ -68,4 +61,4 @@ public class TerminalOperationLog extends Timestamps {
 	@Transient
 	public Terminal terminal;
 
- }
+}

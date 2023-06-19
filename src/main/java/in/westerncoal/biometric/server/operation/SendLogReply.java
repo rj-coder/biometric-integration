@@ -4,8 +4,7 @@ import java.util.Calendar;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import in.westerncoal.biometric.app.TerminalOperation;
-import in.westerncoal.biometric.types.MessageType;
+import in.westerncoal.biometric.enums.MessageType;
 import in.westerncoal.biometric.util.BioUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package in.westerncoal.biometric.app;
+package in.westerncoal.biometric.enums;
 
 public enum OperationType {
 	DEVICE_CONNECT,

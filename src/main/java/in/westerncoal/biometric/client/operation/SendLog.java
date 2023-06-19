@@ -5,10 +5,10 @@ import java.util.List;
 
 import in.westerncoal.biometric.model.AttendanceKey;
 import in.westerncoal.biometric.model.TerminalSend;
-import in.westerncoal.biometric.types.MessageType;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
+import in.westerncoal.biometric.enums.MessageType;
 import in.westerncoal.biometric.model.Attendance;
 
 @Jacksonized

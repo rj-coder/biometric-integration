@@ -6,15 +6,15 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import in.westerncoal.biometric.app.OperationStatus;
 import in.westerncoal.biometric.client.operation.GetAllLogReply;
+import in.westerncoal.biometric.enums.MessageType;
+import in.westerncoal.biometric.enums.TerminalOperationStatus;
 import in.westerncoal.biometric.enums.TerminalStatus;
 import in.westerncoal.biometric.model.ServerPullLog;
 import in.westerncoal.biometric.model.ServerPullLogKey;
 import in.westerncoal.biometric.model.Terminal;
 import in.westerncoal.biometric.model.TerminalOperationCache;
 import in.westerncoal.biometric.model.TerminalOperationLog;
-import in.westerncoal.biometric.model.TerminalOperationStatus;
 import in.westerncoal.biometric.repository.ServerPullLogRepository;
 import in.westerncoal.biometric.repository.TerminalOperationLogRepository;
 import in.westerncoal.biometric.repository.TerminalRepository;
@@ -22,7 +22,6 @@ import in.westerncoal.biometric.server.operation.GetAllLogReplyServerResponse;
 import in.westerncoal.biometric.server.operation.SendLogReply;
 import in.westerncoal.biometric.server.operation.TerminalRegisterReply;
 import in.westerncoal.biometric.service.TerminalService;
-import in.westerncoal.biometric.types.MessageType;
 import in.westerncoal.biometric.util.BioUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;

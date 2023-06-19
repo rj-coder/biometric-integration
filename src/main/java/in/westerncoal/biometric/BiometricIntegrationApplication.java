@@ -14,7 +14,6 @@ import in.westerncoal.biometric.service.TerminalService;
 
 @SpringBootApplication
 @EnableScheduling
-@EnableTransactionManagement
 public class BiometricIntegrationApplication  implements ApplicationListener<ContextClosedEvent> {
 	@Autowired
 	TerminalService bioTerminalService;
