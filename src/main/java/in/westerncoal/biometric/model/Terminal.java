@@ -1,29 +1,21 @@
 package in.westerncoal.biometric.model;
 
-import java.sql.Timestamp;
-import java.util.List;
-import java.util.Set;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import jakarta.persistence.CascadeType;
+import java.util.Objects;
+import org.java_websocket.WebSocket;
+import in.westerncoal.biometric.enums.TerminalStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Transient;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Entity
 @Table(name = "terminal", schema = "bio")
@@ -33,22 +25,46 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 public class Terminal {
+	@Transient
+    private final Lock lock = new ReentrantLock();
+
+	
 	@Id
-	@Column(name="terminal_id")
- 	private String terminalId;
+	@Column(name = "terminal_id")
+	private String terminalId;
+
+	@Transient
+	private WebSocket webSocket;
 
 	@Builder.Default
+	@Column(name = "terminal_status")
 	private TerminalStatus terminalStatus = TerminalStatus.ACTIVE;
 
-	@UpdateTimestamp
-	private Timestamp lastTimestamp;
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Terminal other = (Terminal) obj;
+		return terminalId.compareTo(other.terminalId) == 0;
+	}
 
-//	@ManyToMany(fetch = FetchType.LAZY,mappedBy = "terminals")
-// 	@ToString.Exclude 	
-// 	public Set<ServerPullLog> serverLog;
+	@Override
+	public int hashCode() {
+		return Objects.hash(terminalId);
+	}
 
-//	
-//	@OneToMany(fetch = FetchType.LAZY,mappedBy = "terminal")
-// 	@ToString.Exclude 	
-// 	public Set<TerminalSendLog> terminalLog;
+	public boolean isActive() {
+
+		return terminalStatus == TerminalStatus.ACTIVE;
+	}
+
+	public boolean isWebSocketClosed() {
+
+		return webSocket.isClosed();
+	}
+
 }

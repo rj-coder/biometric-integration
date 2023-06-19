@@ -1,7 +1,8 @@
 package in.westerncoal.biometric.app;
 
+import org.java_websocket.WebSocket;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import in.westerncoal.biometric.types.MessageType;
 import in.westerncoal.biometric.util.BioUtil;
@@ -9,8 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Message {
- 
-	public static MessageType getMessageType(String message) {
+
+	public static MessageType getMessageType(WebSocket conn, String message) {
 		try {
 			JsonNode jsonNode = BioUtil.getObjectMapper().readTree(message);
 
@@ -35,11 +36,9 @@ public class Message {
 				log.error("Unknown Error Message {}", message);
 				return MessageType.UNKNOWN_MSG;
 			}
-		} catch (JsonMappingException e) {
-			return MessageType.UNKNOWN_MSG;
 		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-			log.error("Invalid JSON Data {}", message);
+			log.error("{} -> {} Invalid JSON DATA: {}", conn.getRemoteSocketAddress(), conn.getLocalSocketAddress(),
+					message);
 			return MessageType.UNKNOWN_MSG;
 		}
 

@@ -1,28 +1,25 @@
-package in.westerncoal.biometric.server.operation;
+package in.westerncoal.biometric.client.operation;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import in.westerncoal.biometric.types.MessageType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.NoArgsConstructor;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 
-@Jacksonized
 @Value
+@Jacksonized
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor
-public class GetAllLogReplyServerResponse {
-	@Builder.Default
-	public String cmd="getalllog";
-	@Builder.Default
-	public boolean stn=false;
+public class TerminalRegister {
+	private String cmd;
+	private String sn;
+	private Devinfo devinfo;
 	
 	@JsonIgnore
 	public MessageType getMessageType() {
-		return MessageType.DEVICE_GETALLLOG_REPLY_RESPONSE_MSG;
+		return MessageType.DEVICE_INIT_REGISTER_MSG;
 	}
 
 }

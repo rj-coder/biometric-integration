@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,11 +32,11 @@ public class TerminalSend {
 	@UuidGenerator(style = Style.RANDOM)
 	@Column(name = "send_id")
 	private String sendId;
+	
 	@CreationTimestamp
 	private Timestamp sendTime;
 	private String sendCommand;
 	
-	@OneToOne
-	@JoinColumn(name="terminal_id")
-	private Terminal terminal;
-}
+	private String terminalId;
+	
+ }

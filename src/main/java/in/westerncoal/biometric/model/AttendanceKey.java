@@ -2,6 +2,8 @@ package in.westerncoal.biometric.model;
 
 import java.sql.Date;
 import java.sql.Time;
+import java.sql.Timestamp;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
@@ -21,6 +23,5 @@ import lombok.Setter;
 public class AttendanceKey {
 	@Column(length = 8)
 	private Integer personnelNumber;
-	private Date punchDate;
-	private Time punchTime;
+	private Timestamp punchDateTime;
 }

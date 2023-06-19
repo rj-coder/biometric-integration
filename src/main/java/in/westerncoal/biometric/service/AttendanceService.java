@@ -8,7 +8,10 @@ import in.westerncoal.biometric.model.Attendance;
 public interface AttendanceService {
 
 	Attendance saveAttendance(Attendance attendance);
-
+	
+	
 	List<Attendance> saveAttendances(List<Attendance> attendances);
+	
+	List<Attendance> saveNewAttendances(List<Attendance> attendances);
 
 }

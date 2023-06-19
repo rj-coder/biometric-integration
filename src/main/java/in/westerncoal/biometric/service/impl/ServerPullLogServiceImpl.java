@@ -9,6 +9,8 @@ import in.westerncoal.biometric.repository.ServerPullLogRepository;
 import in.westerncoal.biometric.repository.ServerPullRepository;
 import in.westerncoal.biometric.service.ServerPullLogService;
 import in.westerncoal.biometric.service.ServerPullService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -16,10 +18,14 @@ public class ServerPullLogServiceImpl implements ServerPullLogService {
 
 	@Autowired
 	ServerPullLogRepository serverPullLogRepository;
+	
+	@PersistenceContext
+	EntityManager em;
 
 	@Transactional
-	public ServerPullLog saveServerPullLog(ServerPullLog serverPullLog) {
-		return serverPullLogRepository.save(serverPullLog);
+ 	public ServerPullLog saveServerPullLog(ServerPullLog serverPullLog) {
+ 		em.persist(serverPullLog);
+		return serverPullLog;
 	}
 
 }

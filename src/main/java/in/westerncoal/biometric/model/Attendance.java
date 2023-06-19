@@ -1,12 +1,16 @@
 package in.westerncoal.biometric.model;
 
-import jakarta.persistence.CascadeType;
+import java.sql.Date;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Immutable;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,23 +23,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class Attendance {
+@Immutable
+public class Attendance{
 	@EmbeddedId
 	private AttendanceKey AttendanceKey;
 
 	@Builder.Default
 	private boolean uploadFlag = false;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "pull_id")
-	private ServerPull serverPullLog;
+	private String pullId;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "terminal_id")
-	private Terminal terminal;
+	private String sendId;
 
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name="send_id")
- 	public TerminalSend terminalSendLog;
+	private String terminalId;
+
+	@CreationTimestamp
+	private Date createTimestamp;
 
 }
