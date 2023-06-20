@@ -5,7 +5,6 @@ import org.springframework.stereotype.Repository;
 
 import in.westerncoal.biometric.model.TerminalSend;
 
-@Repository
 public interface TerminalSendLogRepository extends JpaRepository<TerminalSend, Long> {
 
 }

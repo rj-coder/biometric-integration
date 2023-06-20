@@ -12,14 +12,14 @@ import in.westerncoal.biometric.service.ServerPullService;
 import jakarta.transaction.Transactional;
 
 @Service
-public class ServerPullLogServiceImpl implements ServerPullLogService {
+public class ServerPullServiceImpl implements ServerPullService {
 
 	@Autowired
-	ServerPullLogRepository serverPullLogRepository;
+	ServerPullRepository serverPullRepository;
 
 	@Transactional
-	public ServerPullLog saveServerPullLog(ServerPullLog serverPullLog) {
-		return serverPullLogRepository.save(serverPullLog);
+	public ServerPull saveServerPull(ServerPull serverPull) {
+		return serverPullRepository.save(serverPull);
 	}
 
 }
