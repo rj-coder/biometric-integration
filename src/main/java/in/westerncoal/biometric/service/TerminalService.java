@@ -24,7 +24,7 @@ public interface TerminalService {
 
 	void doExecute(TerminalOperationLog terminalOperationLog, SendLogReply sendLogReply);
 
-	void doExecute(TerminalOperationLog terminalOperationLog, GetAllLogReply getAllLogReply);
+	//void doExecute(TerminalOperationLog terminalOperationLog, GetAllLogReply getAllLogReply);
 
 	void doExecute(TerminalOperationLog terminalOperationLog, String pullCommand);
 

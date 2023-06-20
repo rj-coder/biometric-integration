@@ -222,9 +222,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 			try {
 				TerminalOperationLog terminalOperationLog = TerminalOperationLog.builder()
 						.terminalId(terminal.getTerminalId()).terminal(terminal)
-						.operationType(OperationType.DEVICE_CONNECT_TERMINAL)
-						.recordCount(0)
-						.recordFetched(0)						
+						.operationType(OperationType.DEVICE_CONNECT_TERMINAL).recordCount(0).recordFetched(0)
 						.terminalOperationStatus(TerminalOperationStatus.IN_PROGRESS).build();
 
 				// Save Terminal & Operation Log - IN PROGRESS
@@ -232,6 +230,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 
 				terminalOperationLog = terminalService.save(terminalOperationLog);
 
+				terminalOperationLog.setTerminal(terminal);
 				// Save in Terminal Cache
 				TerminalOperationCache.addTerminalOperation(terminalOperationLog, websocket);
 
