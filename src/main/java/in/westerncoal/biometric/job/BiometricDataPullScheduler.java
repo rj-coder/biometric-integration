@@ -58,10 +58,11 @@ public class BiometricDataPullScheduler {
 
 		boolean isPullHasActiveTerminals = false;
 		boolean createServerPull = true;
+		ServerPull serverPull = null;
 		for (Terminal terminal : TerminalOperationCache.getActiveTerminals()) {
 			if (!TerminalOperationCache.getTerminalOperationLog(terminal).getTerminalOperationStatus()
 					.equals(TerminalOperationStatus.IN_PROGRESS) && terminal.getLock().tryLock()) {
-				ServerPull serverPull = null;
+
 				if (createServerPull) {
 					// Create ServerPull & Save in DB
 					serverPull = ServerPull.builder().serverId(InetAddress.getLocalHost().toString()).build();
