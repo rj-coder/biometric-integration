@@ -89,9 +89,9 @@ public class BiometricDataPullScheduler {
 				Terminal terminal = TerminalOperationCache
 						.getTerminal(serverPullLog.getServerPullLogKey().getTerminalId());
 				TerminalOperationLog terminalOperationLog = TerminalOperationLog.builder()
-						.operationType(OperationType.DEVICE_GETALLLOG_OPERATION)
-						.pullId(serverPullLog.getServerPullLogKey().getPullId()).terminalId(terminal.getTerminalId())
-						.terminal(terminal).build();
+						.operationType(OperationType.DEVICE_GETALLLOG_OPERATION_SERVER).recordCount(0).recordFetched(0)
+						.recordFetchOperation(true).pullId(serverPullLog.getServerPullLogKey().getPullId())
+						.terminalId(terminal.getTerminalId()).terminal(terminal).build();
 				if (serverPullLog.getLock().tryLock())
 					try {
 						terminalService.doExecute(terminalOperationLog, serverPullLog.getPullCommand());
