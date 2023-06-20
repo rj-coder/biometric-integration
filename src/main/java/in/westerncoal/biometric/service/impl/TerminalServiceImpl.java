@@ -148,10 +148,10 @@ public class TerminalServiceImpl implements TerminalService {
 				serverPullLogRepository.save(serverPullLog);
 
 				terminal.getWebSocket().send(pullCommand);
-				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
-				terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-				terminalOperationLog.setTerminal(terminal);//Update Terminal
-				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+//				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
+//				terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
+//				terminalOperationLog.setTerminal(terminal);//Update Terminal
+//				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
 
 				log.info("{}[{}] <- {}{}", terminal.getTerminalId(), terminal.getWebSocket().getRemoteSocketAddress(),
 						MessageType.DEVICE_GETALLLOG_MSG, pullCommand);
