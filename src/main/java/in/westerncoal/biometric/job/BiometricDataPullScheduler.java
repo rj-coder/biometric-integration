@@ -65,7 +65,7 @@ public class BiometricDataPullScheduler {
 				if (createServerPull) {
 					// Create ServerPull & Save in DB
 					serverPull = ServerPull.builder().serverId(InetAddress.getLocalHost().toString()).build();
-					serverPullService.saveServerPull(serverPull);
+					serverPull = serverPullService.saveServerPull(serverPull);
 					createServerPull = false;
 				}
 				ServerPullLogKey serverPullLogKey = ServerPullLogKey.builder().pullId(serverPull.getPullId())
