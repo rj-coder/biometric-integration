@@ -94,7 +94,7 @@ public class TerminalServiceImpl implements TerminalService {
 			terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
 			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
 			terminalOperationLogRepository.save(terminalOperationLog);
-			
+
 			terminal.getWebSocket().send(reply);
 
 			log.info("{}[{}] <- {}{}", terminal.getTerminalId(), terminal.getWebSocket().getRemoteSocketAddress(),
@@ -124,38 +124,34 @@ public class TerminalServiceImpl implements TerminalService {
 	public void doExecute(TerminalOperationLog terminalOperationLog, String pullCommand) {
 
 		Terminal terminal = TerminalOperationCache.getTerminal(terminalOperationLog.getTerminal().getTerminalId());
-		terminal.getLock().lock();
 		TerminalOperationLog cacheLog = TerminalOperationCache.getTerminalOperationLog(terminal);
 
-		if (cacheLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
-			terminal.getLock().unlock();
+		if (!cacheLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)
+				&& terminal.getLock().tryLock()) {
+			try {
+				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.IN_PROGRESS);
+				terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
 
-			return;
-		}
-		try {
+				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
 
-			terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.IN_PROGRESS);
-			terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
+				ServerPullLogKey serverPullLogKey = ServerPullLogKey.builder().pullId(terminalOperationLog.getPullId())
+						.terminalId(terminalOperationLog.getTerminal().getTerminalId()).build();
+				ServerPullLog serverPullLog = ServerPullLog.builder().serverPullLogKey(serverPullLogKey).build();
+				serverPullLogRepository.save(serverPullLog);
+				terminal.getWebSocket().send(pullCommand);
+				log.info("{}[{}] <- {}{}", terminal.getTerminalId(), terminal.getWebSocket().getRemoteSocketAddress(),
+						MessageType.DEVICE_GETALLLOG_MSG, pullCommand);
+			} catch (WebsocketNotConnectedException e) {
+				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
+				terminalOperationLog.getTerminal().setTerminalStatus(TerminalStatus.INACTIVE);
+				terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
+				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);// update terminal status
 
-			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
-
-			ServerPullLogKey serverPullLogKey = ServerPullLogKey.builder().pullId(terminalOperationLog.getPullId())
-					.terminalId(terminalOperationLog.getTerminal().getTerminalId()).build();
-			ServerPullLog serverPullLog = ServerPullLog.builder().serverPullLogKey(serverPullLogKey).build();
-			serverPullLogRepository.save(serverPullLog);
-			terminal.getWebSocket().send(pullCommand);
-			log.info("{}[{}] <- {}{}", terminal.getTerminalId(), terminal.getWebSocket().getRemoteSocketAddress(),
-					MessageType.DEVICE_GETALLLOG_MSG, pullCommand);
-		} catch (WebsocketNotConnectedException e) {
-			terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
-			terminalOperationLog.getTerminal().setTerminalStatus(TerminalStatus.INACTIVE);
-			terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);// update terminal status
-
-			log.warn("{}[{}] -/- {}{} : WebSocket not connected", terminal.getTerminalId(),
-					terminal.getWebSocket().getRemoteSocketAddress(), MessageType.DEVICE_GETALLLOG_MSG, this);
-		} finally {
-			terminal.getLock().unlock();
+				log.warn("{}[{}] -/- {}{} : WebSocket not connected", terminal.getTerminalId(),
+						terminal.getWebSocket().getRemoteSocketAddress(), MessageType.DEVICE_GETALLLOG_MSG, this);
+			} finally {
+				terminal.getLock().unlock();
+			}
 		}
 	}
 

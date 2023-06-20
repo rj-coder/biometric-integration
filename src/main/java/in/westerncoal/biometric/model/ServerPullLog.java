@@ -27,4 +27,7 @@ public class ServerPullLog {
 	@EmbeddedId
 	private ServerPullLogKey serverPullLogKey;
 	
+	private String pullCommand;
+	
+	private Character pullType;
 }

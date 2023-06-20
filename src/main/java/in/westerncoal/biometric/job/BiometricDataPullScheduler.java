@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,8 +29,10 @@ import in.westerncoal.biometric.service.ServerPullService;
 import in.westerncoal.biometric.service.TerminalService;
 import in.westerncoal.biometric.util.BioUtil;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Slf4j
 public class BiometricDataPullScheduler {
 
 	@Autowired
@@ -51,45 +54,58 @@ public class BiometricDataPullScheduler {
 	@Transactional
 	public void pullData() throws ParseException, UnknownHostException, JsonProcessingException {
 
-		GetAllLog getAllLog = createGetAllLogCriteria();
 		List<ServerPullLog> serverPullLogs = new ArrayList<>();
 
-		String getAllLogJson = BioUtil.getObjectMapper().writeValueAsString(getAllLog);
-
-		// Create ServerPull & Save in DB
-		ServerPull serverPull = ServerPull.builder().serverId(InetAddress.getLocalHost().toString())
-				.pullCommand(getAllLogJson).pullType(terminalDataPullMode).build();
-		if (TerminalOperationCache.getActiveTerminals().size() > 0)
-			serverPullService.saveServerPull(serverPull);
-
+		boolean isPullHasActiveTerminals = false;
+		boolean createServerPull = true;
 		for (Terminal terminal : TerminalOperationCache.getActiveTerminals()) {
 			if (!TerminalOperationCache.getTerminalOperationLog(terminal).getTerminalOperationStatus()
 					.equals(TerminalOperationStatus.IN_PROGRESS) && terminal.getLock().tryLock()) {
+				ServerPull serverPull = null;
+				if (createServerPull) {
+					// Create ServerPull & Save in DB
+					serverPull = ServerPull.builder().serverId(InetAddress.getLocalHost().toString()).build();
+					serverPullService.saveServerPull(serverPull);
+					createServerPull = false;
+				}
 				ServerPullLogKey serverPullLogKey = ServerPullLogKey.builder().pullId(serverPull.getPullId())
 						.terminalId(terminal.getTerminalId()).build();
 
 				ServerPullLog serverPullLog = ServerPullLog.builder().serverPullLogKey(serverPullLogKey).build();
 				serverPullLogs.add(serverPullLog);
+				isPullHasActiveTerminals = true;
 				terminal.getLock().unlock();
 			}
 		}
 
-		for (ServerPullLog serverPullLog : serverPullLogs) {
-			Terminal terminal = TerminalOperationCache.getTerminal(serverPullLog.getServerPullLogKey().getTerminalId());
-			TerminalOperationLog terminalOperationLog = TerminalOperationLog.builder()
-					.operationType(OperationType.DEVICE_GETALLLOG_OPERATION).pullId(serverPull.getPullId())
-					.terminalId(terminal.getTerminalId()).terminal(terminal).build();
-			serverPullLog.getLock().lock();
-			try {
-				terminalService.doExecute(terminalOperationLog, serverPull.getPullCommand());
-			} finally {
-				serverPullLog.getLock().unlock();
-			}
+		if (isPullHasActiveTerminals) {
 
+			for (ServerPullLog serverPullLog : serverPullLogs) {
+				GetAllLog getAllLog = createGetAllLogCriteria(serverPullLog);
+
+				String getAllLogJson = BioUtil.getObjectMapper().writeValueAsString(getAllLog);
+				serverPullLog.setPullCommand(getAllLogJson);
+
+				Terminal terminal = TerminalOperationCache
+						.getTerminal(serverPullLog.getServerPullLogKey().getTerminalId());
+				TerminalOperationLog terminalOperationLog = TerminalOperationLog.builder()
+						.operationType(OperationType.DEVICE_GETALLLOG_OPERATION)
+						.pullId(serverPullLog.getServerPullLogKey().getPullId()).terminalId(terminal.getTerminalId())
+						.terminal(terminal).build();
+				if (serverPullLog.getLock().tryLock())
+					try {
+						terminalService.doExecute(terminalOperationLog, serverPullLog.getPullCommand());
+					} finally {
+						serverPullLog.getLock().unlock();
+					}
+				else
+					log.warn("Server Pull Skipped for {}", terminal.getTerminalId());
+			}
 		}
+
 	}
 
-	private GetAllLog createGetAllLogCriteria() throws ParseException {
+	private GetAllLog createGetAllLogCriteria(ServerPullLog serverPullLog) throws ParseException {
 		Date fromDate = null, toDate = null;
 		GetAllLog getAllLog = new GetAllLog();
 		switch (terminalDataPullMode) {

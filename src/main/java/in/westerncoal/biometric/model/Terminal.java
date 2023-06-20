@@ -1,6 +1,10 @@
 package in.westerncoal.biometric.model;
 
+import java.sql.Date;
 import java.util.Objects;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.java_websocket.WebSocket;
 import in.westerncoal.biometric.enums.TerminalStatus;
 import jakarta.persistence.Column;
@@ -24,7 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @Data
 @Builder
 @NoArgsConstructor
-public class Terminal {
+public class Terminal  {
 	@Transient
     private final Lock lock = new ReentrantLock();
 
@@ -40,6 +44,9 @@ public class Terminal {
 	@Column(name = "terminal_status")
 	private TerminalStatus terminalStatus = TerminalStatus.ACTIVE;
 
+	@UpdateTimestamp
+	private Date createTimestamp;
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
