@@ -150,13 +150,6 @@ public class BiometricIntegrationServer extends WebSocketServer {
 				// Save Terminal & Operation Log - IN PROGRESS
 				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
 
-//				// Set Pull Status to Completed
-//				ServerPull serverPull = serverPullService.findBy(terminalOperationLog.getPullId());
-//				serverPull.setPullCompleteTime(new Timestamp(System.currentTimeMillis()));
-//				;
-//				serverPull.setPullStatus(PullStatus.COMPLETED);
-//				serverPullService.saveServerPull(serverPull);
-
 				terminalService.save(terminalOperationLog);
 
 				log.warn("{}[{}] -> {} completed", terminal.getTerminalId(), webSocket.getRemoteSocketAddress(),

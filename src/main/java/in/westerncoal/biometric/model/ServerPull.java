@@ -3,7 +3,6 @@ package in.westerncoal.biometric.model;
 import java.sql.Timestamp;
 import java.util.Objects;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.UuidGenerator.Style;
 import in.westerncoal.biometric.enums.PullStatus;
