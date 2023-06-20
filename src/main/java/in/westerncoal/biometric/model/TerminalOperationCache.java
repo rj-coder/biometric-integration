@@ -11,9 +11,9 @@ import in.westerncoal.biometric.enums.TerminalStatus;
 public class TerminalOperationCache {
 	private static final Map<String, TerminalOperationLog> terminalMap = new ConcurrentHashMap<String, TerminalOperationLog>();
 
-	public static void addTerminalOperation(TerminalOperationLog terminalOperationLog, WebSocket websocket) {
+	public static void addTerminalOperation(String terminalId,TerminalOperationLog terminalOperationLog, WebSocket websocket) {
 		terminalOperationLog.getTerminal().setWebSocket(websocket);
-		terminalMap.put(terminalOperationLog.getTerminal().getTerminalId(), terminalOperationLog);
+		terminalMap.put(terminalId, terminalOperationLog);
 	}
 
 	public static void removeTerminal(String terminalId) {
@@ -37,8 +37,8 @@ public class TerminalOperationCache {
 		terminalMap.put(updatedLog.getTerminal().getTerminalId(), updatedLog);
 	}
 
-	public static void updateTerminalOperation(TerminalOperationLog updatedLog) {
-		terminalMap.put(updatedLog.getTerminal().getTerminalId(), updatedLog);
+	public static void updateTerminalOperation(String terminalId,TerminalOperationLog updatedLog) {
+		terminalMap.put(terminalId, updatedLog);
 	}
 
 	public static void updateTerminalStatus(String terminalId, TerminalStatus newStatus) {

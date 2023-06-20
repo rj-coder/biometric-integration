@@ -64,7 +64,7 @@ public class TerminalServiceImpl implements TerminalService {
 			terminal.getWebSocket().send(reply);
 			terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
 			terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+			TerminalOperationCache.updateTerminalOperation(terminal.getTerminalId(),terminalOperationLog);
 
 			log.info("{}[{}] <- {}{}", terminal.getTerminalId(), terminal.getWebSocket().getRemoteSocketAddress(),
 					terminalRegisterReply.getMessageType(), reply);
@@ -95,9 +95,9 @@ public class TerminalServiceImpl implements TerminalService {
 			terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
 
 			terminal.getWebSocket().send(reply);
-			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+			TerminalOperationCache.updateTerminalOperation(terminal.getTerminalId(),terminalOperationLog);
 			terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+			TerminalOperationCache.updateTerminalOperation(terminal.getTerminalId(), terminalOperationLog);
 
 			log.info("{}[{}] <- {}{}", terminal.getTerminalId(), terminal.getWebSocket().getRemoteSocketAddress(),
 					sendLogReply.getMessageType(), reply);
@@ -134,7 +134,7 @@ public class TerminalServiceImpl implements TerminalService {
 				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.IN_PROGRESS);
 				terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
 
-				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+				TerminalOperationCache.updateTerminalOperation(terminal.getTerminalId(),terminalOperationLog);
 
 				ServerPullLogKey serverPullLogKey = ServerPullLogKey.builder().pullId(terminalOperationLog.getPullId())
 
@@ -146,7 +146,7 @@ public class TerminalServiceImpl implements TerminalService {
 				terminal.getWebSocket().send(pullCommand);
 				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
 				terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+				TerminalOperationCache.updateTerminalOperation(terminal.getTerminalId(),terminalOperationLog);
 
 				log.info("{}[{}] <- {}{}", terminal.getTerminalId(), terminal.getWebSocket().getRemoteSocketAddress(),
 						MessageType.DEVICE_GETALLLOG_MSG, pullCommand);
@@ -154,7 +154,7 @@ public class TerminalServiceImpl implements TerminalService {
 				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
 				terminal.setTerminalStatus(TerminalStatus.INACTIVE);
 				terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);// update terminal status
+				TerminalOperationCache.updateTerminalOperation(terminal.getTerminalId(),terminalOperationLog);// update terminal status
 				terminalRepository.save(terminal);
 				log.warn("{}[{}] -/- {}{} : WebSocket not connected", terminal.getTerminalId(),
 						terminal.getWebSocket().getRemoteSocketAddress(), MessageType.DEVICE_GETALLLOG_MSG, this);

@@ -22,7 +22,7 @@ public class ShutdownHandler {
 			TerminalOperationLog terminalOperationLog = TerminalOperationCache.getTerminalOperationLog(terminal);
 			if (terminalOperationLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
 				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
-				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+				TerminalOperationCache.updateTerminalOperation(terminal.getTerminalId(),terminalOperationLog);
 				terminalService.save(terminalOperationLog);
 			} else
 				continue;

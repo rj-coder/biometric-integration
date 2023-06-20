@@ -80,7 +80,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 				terminalService.save(terminalOperationLog);
 			}
 			terminalService.save(terminal);
-			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+			TerminalOperationCache.updateTerminalOperation(terminal.getTerminalId(),terminalOperationLog);
 			log.info("{}[{}} >-< {}", terminal.getTerminalId(), webSocket.getRemoteSocketAddress(),
 					webSocket.getLocalSocketAddress());
 		} else {
@@ -148,7 +148,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
 
 				// Save Terminal & Operation Log - IN PROGRESS
-				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+				TerminalOperationCache.updateTerminalOperation(terminal.getTerminalId(),terminalOperationLog);
 
 				terminalService.save(terminalOperationLog);
 
@@ -233,7 +233,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 				terminalOperationLog = terminalService.save(terminalOperationLog);
 
 				// Save in Terminal Cache
-				TerminalOperationCache.addTerminalOperation(terminalOperationLog, websocket);
+				TerminalOperationCache.addTerminalOperation(terminal.getTerminalId(),terminalOperationLog, websocket);
 
 				// Prepare Reply to TerminalRegister
 				TerminalRegisterReply terminalRegisterReply = TerminalRegisterReply.builder().build();
@@ -266,7 +266,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 				terminalService.save(terminalOperationLog);
 			}
 			terminalService.save(terminal);
-			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+			TerminalOperationCache.updateTerminalOperation(terminal.getTerminalId(),terminalOperationLog);
 			log.info("{}[{}} -E- {} : WebSocket Error", terminal.getTerminalId(), webSocket.getRemoteSocketAddress(),
 					webSocket.getLocalSocketAddress());
 		} else
