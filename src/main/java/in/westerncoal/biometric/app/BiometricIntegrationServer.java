@@ -147,24 +147,25 @@ public class BiometricIntegrationServer extends WebSocketServer {
 			if (getAllLogReply.isEmptyReply()) {
 				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
 
+				terminalOperationLog = terminalService.save(terminalOperationLog);
+				terminalOperationLog.setTerminal(terminal);
 				// Save Terminal & Operation Log - IN PROGRESS
 				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
-
-				terminalService.save(terminalOperationLog);
 
 				log.warn("{}[{}] -> {} completed", terminal.getTerminalId(), webSocket.getRemoteSocketAddress(),
 						MessageType.DEVICE_GETALLLOG_MSG);
 			} else {
 				GetAllLogReplyServerResponse getAllLogReplyServerResponse = GetAllLogReplyServerResponse.builder()
 						.build();
+
 				ServerPullLogKey serverPullLogKey = ServerPullLogKey.builder().pullId(terminalOperationLog.getPullId())
 						.terminalId(terminalOperationLog.getTerminal().getTerminalId()).build();
 				ServerPullLog serverPullLog = ServerPullLog.builder().serverPullLogKey(serverPullLogKey).build();
 				terminalOperationLog.setRecordCount(getAllLogReply.getCount());
-
 				terminalOperationLog.setRecordFetched(getAllLogReply.getTo());
 				TerminalOperationCache.updateTerminalOperation(terminalOperationLog, webSocket);
-				terminalService.save(terminalOperationLog);
+				terminalOperationLog = terminalService.save(terminalOperationLog);
+				terminalOperationLog.setTerminal(terminal);
 				List<Attendance> attendanceList = getAllLogReply.getAttendanceList(serverPullLog);
 				attendanceService.saveAttendances(attendanceList);
 				terminalService.doExecute(terminalOperationLog, getAllLogReplyServerResponse);
@@ -255,14 +256,15 @@ public class BiometricIntegrationServer extends WebSocketServer {
 		Terminal terminal = TerminalOperationCache.getTerminalByWebSocket(webSocket);
 		if (terminal != null) {
 			TerminalOperationLog terminalOperationLog = TerminalOperationCache.getTerminalOperationLog(terminal);
-			terminalOperationLog.getTerminal().setTerminalStatus(TerminalStatus.INACTIVE);
+			terminal.setTerminalStatus(TerminalStatus.INACTIVE);
 			if (terminalOperationLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
 				if (terminalOperationLog.getRecordCount() == terminalOperationLog.getRecordFetched()) {
 					terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
 
 				} else
 					terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
-				terminalService.save(terminalOperationLog);
+				terminalOperationLog = terminalService.save(terminalOperationLog);
+				terminalOperationLog.setTerminal(terminal);
 			}
 			terminalService.save(terminal);
 			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
