@@ -1,14 +1,16 @@
 package in.westerncoal.biometric.model;
 
-import java.sql.Timestamp;
+ import java.sql.Timestamp;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.UuidGenerator.Style;
 
+import com.querydsl.sql.Column;
+
 import in.westerncoal.biometric.enums.OperationType;
 import in.westerncoal.biometric.enums.TerminalOperationStatus;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -30,10 +32,10 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class TerminalOperationLog extends Timestamps {
+public class TerminalOperationLog {
 	@Id
 	@UuidGenerator(style = Style.RANDOM)
-	private String terminal_log_id;
+	private String terminalLogId;
 
 	private String terminalId;
 
@@ -44,11 +46,11 @@ public class TerminalOperationLog extends Timestamps {
 	@Enumerated(EnumType.STRING)
 	private OperationType operationType;
 
-	@CreationTimestamp
+  	@CreationTimestamp
 	private Timestamp startOperationTime;
-
-	@UpdateTimestamp
-	private Timestamp lastOperationTime;
+ 	
+  	@jakarta.persistence.Column(nullable = true)
+ 	private Timestamp lastOperationTime;
 
 	@Builder.Default
 	private boolean recordFetchOperation = false;

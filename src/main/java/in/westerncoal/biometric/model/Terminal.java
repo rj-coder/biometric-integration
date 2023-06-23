@@ -45,7 +45,9 @@ public class Terminal  {
 	private TerminalStatus terminalStatus = TerminalStatus.ACTIVE;
 
 	@UpdateTimestamp
-	private Date createTimestamp;
+	private Date lastAccessTimestamp;
+	
+	private String terminalAddress;
 	
 	@Override
 	public boolean equals(Object obj) {

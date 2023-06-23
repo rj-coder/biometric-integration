@@ -3,6 +3,7 @@ package in.westerncoal.biometric.app;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.sql.Date;
 import java.util.List;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -62,27 +63,65 @@ public class BiometricIntegrationServer extends WebSocketServer {
 	}
 
 	@Override
+	public void onStart() {
+		log.info("Biometric Integration Websocket Server Started");
+	}
+
+	@Override
 	public void onOpen(WebSocket webSocket, ClientHandshake handshake) {
 		log.info("Terminal Connected: {}", webSocket.getRemoteSocketAddress().toString().substring(1));
+	}
+
+	@Override
+	public void onError(WebSocket webSocket, Exception ex) {
+		Terminal terminal = TerminalOperationCache.getTerminalByWebSocket(webSocket);
+		if (terminal != null) {
+			terminal.getLock().lock();
+			try {
+				TerminalOperationLog terminalOperationLog = TerminalOperationCache.getTerminalOperationLog(terminal);
+				terminal.setTerminalStatus(TerminalStatus.INACTIVE);
+				if (terminalOperationLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
+					if (terminalOperationLog.getRecordCount() == terminalOperationLog.getRecordFetched()) {
+						terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
+
+					} else
+						terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
+					terminalService.updateTerminalOperationLog(terminalOperationLog);
+					terminalOperationLog.setTerminal(terminal);
+				}
+				terminalService.updateTerminal(terminal);
+				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+				log.info("{}[{}} -E- {} : WebSocket Error", terminal.getTerminalId(),
+						webSocket.getRemoteSocketAddress(), webSocket.getLocalSocketAddress());
+			} finally {
+				terminal.getLock().unlock();
+			}
+		} else
+			log.error("Server communication error {} with exception: {}", webSocket, ex);
 	}
 
 	@Override
 	public void onClose(WebSocket webSocket, int code, String reason, boolean remote) {
 		Terminal terminal = TerminalOperationCache.getTerminalByWebSocket(webSocket);
 		if (terminal != null) {
-			TerminalOperationLog terminalOperationLog = TerminalOperationCache.getTerminalOperationLog(terminal);
-			terminalOperationLog.getTerminal().setTerminalStatus(TerminalStatus.INACTIVE);
-			if (terminalOperationLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
-				if (terminalOperationLog.getRecordCount() == terminalOperationLog.getRecordFetched())
-					terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
-				else
-					terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
-				terminalService.save(terminalOperationLog);
+			terminal.getLock().lock();
+			try {
+				TerminalOperationLog terminalOperationLog = TerminalOperationCache.getTerminalOperationLog(terminal);
+				terminalOperationLog.getTerminal().setTerminalStatus(TerminalStatus.INACTIVE);
+				if (terminalOperationLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
+					if (terminalOperationLog.getRecordCount() == terminalOperationLog.getRecordFetched())
+						terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
+					else
+						terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
+					terminalService.save(terminalOperationLog);
+				}
+				terminalService.save(terminal);
+				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+				log.info("{}[{}} >-< {}", terminal.getTerminalId(), webSocket.getRemoteSocketAddress(),
+						webSocket.getLocalSocketAddress());
+			} finally {
+				terminal.getLock().unlock();
 			}
-			terminalService.save(terminal);
-			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
-			log.info("{}[{}} >-< {}", terminal.getTerminalId(), webSocket.getRemoteSocketAddress(),
-					webSocket.getLocalSocketAddress());
 		} else {
 			log.info("Terminal Closed: {}", webSocket.getRemoteSocketAddress().getAddress());
 		}
@@ -123,6 +162,92 @@ public class BiometricIntegrationServer extends WebSocketServer {
 		}
 	}
 
+	private void deviceRegister(WebSocket websocket, String message) throws UnknownHostException {
+		try {
+			TerminalRegister terminalRegister = objectMapper.readValue(message, TerminalRegister.class);
+
+			log.info("{}[{}] -> {}{}", terminalRegister.getSn(), websocket.getRemoteSocketAddress().getAddress(),
+					terminalRegister.getMessageType(), message);
+
+			// Build Terminal
+			Terminal terminal = Terminal.builder().terminalId(terminalRegister.getSn()).webSocket(websocket)
+					.terminalAddress(websocket.getRemoteSocketAddress().getAddress().getHostAddress()).build();
+			terminal.getLock().lock();
+			try {
+
+				// Create TerminalOperationLog
+				TerminalOperationLog terminalOperationLog = TerminalOperationLog.builder()
+						.terminalId(terminal.getTerminalId()).terminal(terminal)
+						.operationType(OperationType.DEVICE_CONNECT_TERMINAL).recordCount(0).recordFetched(0)
+						
+ 						.terminalOperationStatus(TerminalOperationStatus.IN_PROGRESS).build();
+
+				// Save Terminal & Operation Log - IN PROGRESS
+				terminalService.save(terminal);
+				
+			
+
+				// Save new TerminalOperationLog
+				terminalOperationLog = terminalService.save(terminalOperationLog);
+
+				terminalOperationLog.setTerminal(terminal);
+
+				// Save new TerminalOperationLog in Terminal Cache
+				TerminalOperationCache.addTerminalOperation(terminalOperationLog, websocket);
+
+				// Prepare Reply to TerminalRegister
+				TerminalRegisterReply terminalRegisterReply = TerminalRegisterReply.builder().build();
+
+				terminalService.doExecute(terminalOperationLog, terminalRegisterReply);
+
+				log.info("{}[{}] <-> {}[{}]", terminal.getTerminalId(),
+						terminal.getWebSocket().getRemoteSocketAddress(), InetAddress.getLocalHost().getHostName(),
+						websocket.getLocalSocketAddress());
+			} finally {
+				terminal.getLock().unlock();
+			}
+		} catch (JsonProcessingException e3) {
+			log.error("{} - Invalid JSON Data {}", websocket.getRemoteSocketAddress(), message);
+		}
+	}
+
+	private void sendLog(WebSocket webSocket, String message) {
+		try {
+			SendLog sendLog = objectMapper.readValue(message, SendLog.class);
+
+			log.info("{}[{}] -> {}{}", sendLog.getSn(), webSocket.getRemoteSocketAddress(), sendLog.getMessageType(),
+					message);
+
+			SendLogReply sendLogReply = SendLogReply.builder().count(sendLog.getCount()).logindex(sendLog.getLogindex())
+					.build();
+
+			Terminal terminal = TerminalOperationCache.getTerminal(sendLog.getSn());
+
+			synchronized (terminal) {
+				TerminalSend terminalSend = TerminalSend.builder().sendCommand(sendLog.getCmd())
+						.terminalId(sendLog.getSn()).build();
+				terminalSend = terminalSendLogService.saveTerminalSendLog(terminalSend);
+				
+				//Create New TerminalOperationLog
+				TerminalOperationLog terminalOperationLog = TerminalOperationLog.builder().terminal(terminal)
+						.operationType(OperationType.DEVICE_SENDLOG_OPERATION_TERMINAL).sendId(terminalSend.getSendId())
+						.recordFetchOperation(true).recordCount(sendLog.getCount()).recordFetched(sendLog.getCount())
+						.terminalOperationStatus(TerminalOperationStatus.IN_PROGRESS).build();
+
+				// Save Terminal & Operation Log - IN PROGRESS
+				terminalOperationLog = terminalService.save(terminalOperationLog);
+
+				List<Attendance> attendanceList = sendLog.getAttendanceList(terminalSend);
+				attendanceService.saveNewAttendances(attendanceList);
+				
+				terminalService.doExecute(terminalOperationLog, sendLogReply);
+			}
+
+		} catch (JsonProcessingException e) {
+			log.error("{} - Invalid JSON Data {}", webSocket.getRemoteSocketAddress(), message);
+		}
+	}
+
 	private void getAllLogReply(WebSocket webSocket, String message) {
 
 		GetAllLogReply getAllLogReply;
@@ -140,8 +265,9 @@ public class BiometricIntegrationServer extends WebSocketServer {
 		TerminalOperationLog terminalOperationLog = TerminalOperationCache
 				.getTerminalOperationLog(terminal.getTerminalId());
 
-		log.info("{}[{}] -> {}{}", getAllLogReply.getSn(), webSocket.getRemoteSocketAddress(),
-				getAllLogReply.getMessageType(), message);
+		log.info("{}[{}] -> {}{}", getAllLogReply.getSn(),
+				webSocket.getRemoteSocketAddress().getAddress().getHostAddress(), getAllLogReply.getMessageType(),
+				message);
 
 		try {
 			if (getAllLogReply.isEmptyReply()) {
@@ -149,6 +275,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 
 				terminalOperationLog = terminalService.save(terminalOperationLog);
 				terminalOperationLog.setTerminal(terminal);
+
 				// Save Terminal & Operation Log - IN PROGRESS
 				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
 
@@ -176,106 +303,4 @@ public class BiometricIntegrationServer extends WebSocketServer {
 
 	}
 
-	private void sendLog(WebSocket webSocket, String message) {
-		try {
-			SendLog sendLog = objectMapper.readValue(message, SendLog.class);
-
-			log.info("{}[{}] -> {}{}", sendLog.getSn(), webSocket.getRemoteSocketAddress(), sendLog.getMessageType(),
-					message);
-
-			SendLogReply sendLogReply = SendLogReply.builder().count(sendLog.getCount()).logindex(sendLog.getLogindex())
-					.build();
-
-			Terminal terminal = TerminalOperationCache.getTerminal(sendLog.getSn());
-
-			synchronized (terminal) {
-				TerminalSend terminalSend = TerminalSend.builder().sendCommand(sendLog.getCmd())
-						.terminalId(sendLog.getSn()).build();
-				terminalSend = terminalSendLogService.saveTerminalSendLog(terminalSend);
-				TerminalOperationLog terminalOperationLog = TerminalOperationLog.builder().terminal(terminal)
-						.operationType(OperationType.DEVICE_SENDLOG_OPERATION_TERMINAL).sendId(terminalSend.getSendId())
-						.recordFetchOperation(true).recordCount(sendLog.getCount()).recordFetched(sendLog.getCount())
-						.terminalOperationStatus(TerminalOperationStatus.IN_PROGRESS).build();
-
-				// Save Terminal & Operation Log - IN PROGRESS
-				terminalOperationLog = terminalService.save(terminalOperationLog);
-
-				List<Attendance> attendanceList = sendLog.getAttendanceList(terminalSend);
-				attendanceService.saveNewAttendances(attendanceList);
-				terminalService.doExecute(terminalOperationLog, sendLogReply);
-			}
-
-		} catch (JsonProcessingException e) {
-			log.error("{} - Invalid JSON Data {}", webSocket.getRemoteSocketAddress(), message);
-		}
-	}
-
-	private void deviceRegister(WebSocket websocket, String message) throws UnknownHostException {
-		try {
-			TerminalRegister terminalRegister = objectMapper.readValue(message, TerminalRegister.class);
-
-			log.info("{}[{}] -> {}{}", terminalRegister.getSn(), websocket.getRemoteSocketAddress().getAddress(),
-					terminalRegister.getMessageType(), message);
-
-			// Build Terminal
-			Terminal terminal = Terminal.builder().terminalId(terminalRegister.getSn()).webSocket(websocket).build();
-			terminal.getLock().lock();
-			try {
-				TerminalOperationLog terminalOperationLog = TerminalOperationLog.builder()
-						.terminalId(terminal.getTerminalId()).terminal(terminal)
-						.operationType(OperationType.DEVICE_CONNECT_TERMINAL).recordCount(0).recordFetched(0)
-						.terminalOperationStatus(TerminalOperationStatus.IN_PROGRESS).build();
-
-				// Save Terminal & Operation Log - IN PROGRESS
-				terminalService.save(terminal);
-
-				terminalOperationLog = terminalService.save(terminalOperationLog);
-
-				terminalOperationLog.setTerminal(terminal);
-				// Save in Terminal Cache
-				TerminalOperationCache.addTerminalOperation(terminalOperationLog, websocket);
-
-				// Prepare Reply to TerminalRegister
-				TerminalRegisterReply terminalRegisterReply = TerminalRegisterReply.builder().build();
-
-				terminalService.doExecute(terminalOperationLog, terminalRegisterReply);
-
-				log.info("{}[{}] <-> {}[{}]", terminal.getTerminalId(),
-						terminal.getWebSocket().getRemoteSocketAddress(), InetAddress.getLocalHost().getHostName(),
-						websocket.getLocalSocketAddress());
-			} finally {
-				terminal.getLock().unlock();
-			}
-		} catch (JsonProcessingException e3) {
-			log.error("{} - Invalid JSON Data {}", websocket.getRemoteSocketAddress(), message);
-		}
-	}
-
-	@Override
-	public void onError(WebSocket webSocket, Exception ex) {
-		Terminal terminal = TerminalOperationCache.getTerminalByWebSocket(webSocket);
-		if (terminal != null) {
-			TerminalOperationLog terminalOperationLog = TerminalOperationCache.getTerminalOperationLog(terminal);
-			terminal.setTerminalStatus(TerminalStatus.INACTIVE);
-			if (terminalOperationLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
-				if (terminalOperationLog.getRecordCount() == terminalOperationLog.getRecordFetched()) {
-					terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
-
-				} else
-					terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
-				terminalOperationLog = terminalService.save(terminalOperationLog);
-				terminalOperationLog.setTerminal(terminal);
-			}
-			terminalService.save(terminal);
-			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
-			log.info("{}[{}} -E- {} : WebSocket Error", terminal.getTerminalId(), webSocket.getRemoteSocketAddress(),
-					webSocket.getLocalSocketAddress());
-		} else
-			log.error("Server communication error {} with exception: {}", webSocket, ex);
-	}
-
-	@Override
-	public void onStart() {
-		log.info("Biometric Integration Websocket Server Started");
-	}
 }

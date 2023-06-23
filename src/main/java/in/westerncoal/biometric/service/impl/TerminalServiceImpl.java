@@ -1,12 +1,13 @@
 package in.westerncoal.biometric.service.impl;
 
+import java.sql.Date;
+import java.sql.Timestamp;
+
 import org.java_websocket.exceptions.WebsocketNotConnectedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-
-import in.westerncoal.biometric.client.operation.GetAllLogReply;
 import in.westerncoal.biometric.enums.MessageType;
 import in.westerncoal.biometric.enums.TerminalOperationStatus;
 import in.westerncoal.biometric.enums.TerminalStatus;
@@ -44,11 +45,6 @@ public class TerminalServiceImpl implements TerminalService {
 	EntityManager em;
 
 	@Override
-	public void setTerminalInactive(String serialNo) {
-		terminalRepository.update(serialNo);
-	}
-
-	@Override
 	public void save(Terminal terminal) {
 		terminalRepository.save(terminal);
 
@@ -62,9 +58,10 @@ public class TerminalServiceImpl implements TerminalService {
 		try {
 			String reply = BioUtil.getObjectMapper().writeValueAsString(terminalRegisterReply);
 			terminal.getWebSocket().send(reply);
+			terminalOperationLog.setLastOperationTime(new Timestamp(System.currentTimeMillis()));
 			terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
-			terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-			terminalOperationLog.setTerminal(terminal);//Update Terminal
+			terminalOperationLogRepository.updateTerminalOperationLog(terminalOperationLog);
+			terminalOperationLog.setTerminal(terminal);// Update Terminal
 			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
 
 			log.info("{}[{}] <- {}{}", terminal.getTerminalId(), terminal.getWebSocket().getRemoteSocketAddress(),
@@ -72,14 +69,16 @@ public class TerminalServiceImpl implements TerminalService {
 		} catch (WebsocketNotConnectedException e) {
 			terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
 			terminal.setTerminalStatus(TerminalStatus.INACTIVE);
-			terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-			terminalOperationLog.setTerminal(terminal);//Update Terminal
-			TerminalOperationCache.updateTerminalOperation(terminalOperationLog, terminal.getWebSocket());
+			terminalOperationLog.setLastOperationTime(new Timestamp(System.currentTimeMillis()));
+			terminalOperationLogRepository.updateTerminalOperationLog(terminalOperationLog);
+			terminalOperationLog.setTerminal(terminal);// Update terminal of Terminal Operation Log
+			TerminalOperationCache.updateTerminalOperation(terminalOperationLog, terminal.getWebSocket());// Update
+																											// TerminalOperationCache
 			terminalRepository.save(terminal);// Update Terminal Status
+
 			log.warn("{}[{}] -/- {}{} : WebSocket not connected", terminal.getTerminalId(),
 					terminal.getWebSocket().getRemoteSocketAddress(), terminalRegisterReply.getMessageType(), this);
 		} catch (JsonProcessingException e) {
-
 			log.error("{}[{}] -/- {}{} : JSON Parsing Error", terminal.getTerminalId(),
 					terminal.getWebSocket().getRemoteSocketAddress(), terminalRegisterReply.getMessageType(), this);
 
@@ -97,9 +96,9 @@ public class TerminalServiceImpl implements TerminalService {
 			terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
 
 			terminal.getWebSocket().send(reply);
-			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
-			terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-			terminalOperationLog.setTerminal(terminal);//Update Terminal
+			terminalOperationLog.setLastOperationTime(new Timestamp(System.currentTimeMillis()));
+			terminalOperationLogRepository.updateTerminalOperationLog(terminalOperationLog);
+			terminalOperationLog.setTerminal(terminal);// Update Terminal
 			TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
 
 			log.info("{}[{}] <- {}{}", terminal.getTerminalId(), terminal.getWebSocket().getRemoteSocketAddress(),
@@ -110,8 +109,9 @@ public class TerminalServiceImpl implements TerminalService {
 		} catch (WebsocketNotConnectedException e) {
 			terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
 			terminal.setTerminalStatus(TerminalStatus.INACTIVE);
-			terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-			terminalOperationLog.setTerminal(terminal);//Update Terminal
+			terminalOperationLog.setLastOperationTime(new Timestamp(System.currentTimeMillis()));
+			terminalOperationLogRepository.updateTerminalOperationLog(terminalOperationLog);
+			terminalOperationLog.setTerminal(terminal);// Update Terminal Operation Log
 			TerminalOperationCache.updateTerminalOperation(terminalOperationLog, terminal.getWebSocket());// update
 			terminalRepository.save(terminal); // update terminal
 			log.warn("{}[{}] -/- {}{} : WebSocket not connected", terminal.getTerminalId(),
@@ -136,8 +136,9 @@ public class TerminalServiceImpl implements TerminalService {
 				&& terminal.getLock().tryLock()) {
 			try {
 				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.IN_PROGRESS);
-				terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-				terminalOperationLog.setTerminal(terminal);//Update Terminal
+				terminalOperationLog.setLastOperationTime(new Timestamp(System.currentTimeMillis()));
+				terminalOperationLogRepository.updateTerminalOperationLog(terminalOperationLog);
+				terminalOperationLog.setTerminal(terminal);// Update Terminal
 				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
 
 				ServerPullLogKey serverPullLogKey = ServerPullLogKey.builder().pullId(terminalOperationLog.getPullId())
@@ -148,18 +149,16 @@ public class TerminalServiceImpl implements TerminalService {
 				serverPullLogRepository.save(serverPullLog);
 
 				terminal.getWebSocket().send(pullCommand);
-//				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
-//				terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-//				terminalOperationLog.setTerminal(terminal);//Update Terminal
-//				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
 
-				log.info("{}[{}] <- {}{}", terminal.getTerminalId(), terminal.getWebSocket().getRemoteSocketAddress(),
+				log.info("{}[{}] <- {}{}", terminal.getTerminalId(),
+						terminal.getWebSocket().getRemoteSocketAddress().getAddress().getHostAddress(),
 						MessageType.DEVICE_GETALLLOG_MSG, pullCommand);
 			} catch (WebsocketNotConnectedException e) {
 				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
 				terminal.setTerminalStatus(TerminalStatus.INACTIVE);
-				terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-				terminalOperationLog.setTerminal(terminal);//Update Terminal
+				terminalOperationLog.setLastOperationTime(new Timestamp(System.currentTimeMillis()));
+				terminalOperationLogRepository.updateTerminalOperationLog(terminalOperationLog);
+				terminalOperationLog.setTerminal(terminal);// Update Terminal
 				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);// update terminal status
 				terminalRepository.save(terminal);
 				log.warn("{}[{}] -/- {}{} : WebSocket not connected", terminal.getTerminalId(),
@@ -171,39 +170,8 @@ public class TerminalServiceImpl implements TerminalService {
 			log.warn("Previous TerminalOperation in Progress or could not acquire lock: {}", terminal.getTerminalId());
 	}
 
-//	@Override
-//	@Transactional
-//	public void doExecute(TerminalOperationLog terminalOperationLog, GetAllLogReply getAllLogReply) {
-//
-//		Terminal terminal = TerminalOperationCache.getTerminal(terminalOperationLog.getTerminal().getTerminalId());
-//		terminal.getLock().lock();
-//		try {
-//			String reply = BioUtil.getObjectMapper().writeValueAsString(getAllLogReply);
-//
-//			terminal.getWebSocket().send(reply);
-//
-//			log.info("{}[{}] <- {}{}", terminal.getTerminalId(), terminal.getWebSocket().getRemoteSocketAddress(),
-//					getAllLogReply.getMessageType(), reply);
-//		} catch (JsonProcessingException e) {
-//			log.error("{}[{}] -/- {}{} : JSON Parsing Error", terminal.getTerminalId(),
-//					terminal.getWebSocket().getRemoteSocketAddress(), getAllLogReply.getMessageType(), this);
-//		} catch (WebsocketNotConnectedException e) {
-//			terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
-//			terminal.setTerminalStatus(TerminalStatus.INACTIVE);
-//			terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-//			terminalOperationLog.setTerminal(terminal);//Update Terminal
-//			TerminalOperationCache.updateTerminalOperation(terminalOperationLog, terminal.getWebSocket());// update
-//																											// terminal
-//			terminalRepository.save(terminal);
-//			log.warn("{}[{}] -/- {}{} : WebSocket not connected", terminal.getTerminalId(),
-//					terminal.getWebSocket().getRemoteSocketAddress(), getAllLogReply.getMessageType(), this);
-//		} finally {
-//			terminal.getLock().unlock();
-//
-//		}
-//	}
-
 	@Override
+	@Transactional
 	public void doExecute(TerminalOperationLog terminalOperationLog,
 			GetAllLogReplyServerResponse getAllLogReplyServerResponse) {
 		Terminal terminal = TerminalOperationCache.getTerminal(terminalOperationLog.getTerminal().getTerminalId());
@@ -222,8 +190,9 @@ public class TerminalServiceImpl implements TerminalService {
 		} catch (WebsocketNotConnectedException e) {
 			terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
 			terminalOperationLog.getTerminal().setTerminalStatus(TerminalStatus.INACTIVE);
-			terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
-			terminalOperationLog.setTerminal(terminal);//Update Terminal
+			terminalOperationLog.setLastOperationTime(new Timestamp(System.currentTimeMillis()));
+			terminalOperationLogRepository.updateTerminalOperationLog(terminalOperationLog);
+			terminalOperationLog.setTerminal(terminal);// Update Terminal
 			TerminalOperationCache.updateTerminalOperation(terminalOperationLog, terminal.getWebSocket());// update
 																											// terminal
 			log.warn("{}[{}] -/- {}{} : WebSocket not connected", terminal.getTerminalId(),
@@ -237,9 +206,22 @@ public class TerminalServiceImpl implements TerminalService {
 	}
 
 	@Override
+	@Transactional
 	public TerminalOperationLog save(TerminalOperationLog terminalOperationLog) {
-
 		return terminalOperationLogRepository.save(terminalOperationLog);
+	}
+
+	@Override
+	@Transactional
+	public void updateTerminalOperationLog(TerminalOperationLog terminalOperationLog) {
+		terminalOperationLogRepository.updateTerminalOperationLog(terminalOperationLog);
+
+	}
+
+	@Override
+	@Transactional
+	public void updateTerminal(Terminal terminal) {
+		terminalRepository.updateTerminal(terminal);
 	}
 
 }

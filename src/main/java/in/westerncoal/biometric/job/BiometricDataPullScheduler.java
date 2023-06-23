@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -50,11 +52,25 @@ public class BiometricDataPullScheduler {
 	@Value("${terminal.data.pull.mode}")
 	private char terminalDataPullMode;
 
-	@Scheduled(fixedDelay = 12000, initialDelay = 0)
+	List<ServerPullLog> serverPullLogs = new ArrayList<>();
+
+	public ServerPullLog getServerPullLogByTerminal(String terminalId) {
+		return serverPullLogs.stream().filter(t -> t.getServerPullLogKey().getTerminalId().compareTo(terminalId) == 0)
+				.findFirst().orElse(null);
+	}
+
+	//@Scheduled(fixedDelay = 5000, initialDelay = 0)
 	@Transactional
 	public void pullData() throws ParseException, UnknownHostException, JsonProcessingException {
 
-		List<ServerPullLog> serverPullLogs = new ArrayList<>();
+		// Await if previous pull is in progress
+		for (ServerPullLog s : serverPullLogs)
+			try {
+				s.getPullLogLatch().await();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		serverPullLogs.clear();
 
 		boolean isPullHasActiveTerminals = false;
 		boolean createServerPull = true;
@@ -90,17 +106,12 @@ public class BiometricDataPullScheduler {
 				Terminal terminal = TerminalOperationCache
 						.getTerminal(serverPullLog.getServerPullLogKey().getTerminalId());
 				TerminalOperationLog terminalOperationLog = TerminalOperationLog.builder()
-						.operationType(OperationType.DEVICE_GETALLLOG_OPERATION_SERVER).recordCount(0).recordFetched(0)
+						.operationType(OperationType.DEVICE_GETALLLOG_OPERATION).recordCount(0).recordFetched(0)
 						.recordFetchOperation(true).pullId(serverPullLog.getServerPullLogKey().getPullId())
 						.terminalId(terminal.getTerminalId()).terminal(terminal).build();
-				if (serverPullLog.getLock().tryLock())
-					try {
-						terminalService.doExecute(terminalOperationLog, serverPullLog.getPullCommand());
-					} finally {
-						serverPullLog.getLock().unlock();
-					}
-				else
-					log.warn("Server Pull Skipped for {}", terminal.getTerminalId());
+
+				terminalService.doExecute(terminalOperationLog, serverPullLog.getPullCommand());
+
 			}
 		}
 

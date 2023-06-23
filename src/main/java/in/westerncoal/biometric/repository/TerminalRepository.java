@@ -3,16 +3,17 @@ package in.westerncoal.biometric.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.repository.query.Param;
 
 import in.westerncoal.biometric.model.Terminal;
 
 public interface TerminalRepository extends JpaRepository<Terminal, String> {
-	@Query("update Terminal t set t.terminalStatus = 0 where t.terminalId = :terminalId")
 	@Modifying
-	@Transactional
-
-	public void update(String terminalId);
-
+	@Query("UPDATE Terminal t " +
+	       "SET t.terminalStatus = :#{#terminal.terminalStatus}, " +
+	       "t.lastAccessTimestamp = :#{#terminal.lastAccessTimestamp}, " +
+	       "t.terminalAddress = :#{#terminal.terminalAddress} " +
+	       "WHERE t.terminalId = :#{#terminal.terminalId}")
+	void updateTerminal(@Param("terminal") Terminal terminal);
 
 }

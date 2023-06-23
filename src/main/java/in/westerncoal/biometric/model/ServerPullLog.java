@@ -11,6 +11,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Lock;
 
 @Entity
@@ -23,11 +25,15 @@ import java.util.concurrent.locks.Lock;
 public class ServerPullLog {
 	@Transient
 	private final Lock lock = new ReentrantLock();
-	
+
+	@Transient
+	private final CountDownLatch pullLogLatch = new CountDownLatch(1);
+
 	@EmbeddedId
 	private ServerPullLogKey serverPullLogKey;
-	
+
 	private String pullCommand;
-	
+
 	private Character pullType;
+	
 }
