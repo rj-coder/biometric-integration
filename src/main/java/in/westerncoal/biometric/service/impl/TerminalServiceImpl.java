@@ -1,6 +1,5 @@
 package in.westerncoal.biometric.service.impl;
 
-import java.sql.Date;
 import java.sql.Timestamp;
 
 import org.java_websocket.exceptions.WebsocketNotConnectedException;
@@ -22,10 +21,9 @@ import in.westerncoal.biometric.repository.TerminalRepository;
 import in.westerncoal.biometric.server.operation.GetAllLogReplyServerResponse;
 import in.westerncoal.biometric.server.operation.SendLogReply;
 import in.westerncoal.biometric.server.operation.TerminalRegisterReply;
+import in.westerncoal.biometric.service.ServerPullLogService;
 import in.westerncoal.biometric.service.TerminalService;
 import in.westerncoal.biometric.util.BioUtil;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,15 +38,11 @@ public class TerminalServiceImpl implements TerminalService {
 
 	@Autowired
 	ServerPullLogRepository serverPullLogRepository;
+	
+	@Autowired
+	ServerPullLogService serverPullLogService;
 
-	@PersistenceContext
-	EntityManager em;
 
-	@Override
-	public void save(Terminal terminal) {
-		terminalRepository.save(terminal);
-
-	}
 
 	@Override
 	@Transactional
@@ -127,32 +121,32 @@ public class TerminalServiceImpl implements TerminalService {
 
 	@Override
 	@Transactional
-	public void doExecute(TerminalOperationLog terminalOperationLog, String pullCommand) {
+	public void doExecute(TerminalOperationLog terminalOperationLog, ServerPullLog serverPullLog) {
 
 		Terminal terminal = TerminalOperationCache.getTerminal(terminalOperationLog.getTerminal().getTerminalId());
 		TerminalOperationLog cacheLog = TerminalOperationCache.getTerminalOperationLog(terminal);
 
-		if (!cacheLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)
+		if (!cacheLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS) 
 				&& terminal.getLock().tryLock()) {
 			try {
 				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.IN_PROGRESS);
 				terminalOperationLog.setLastOperationTime(new Timestamp(System.currentTimeMillis()));
-				terminalOperationLogRepository.updateTerminalOperationLog(terminalOperationLog);
+				terminalOperationLog = terminalOperationLogRepository.save(terminalOperationLog);
 				terminalOperationLog.setTerminal(terminal);// Update Terminal
 				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
 
 				ServerPullLogKey serverPullLogKey = ServerPullLogKey.builder().pullId(terminalOperationLog.getPullId())
-
 						.terminalId(terminalOperationLog.getTerminal().getTerminalId()).build();
-				ServerPullLog serverPullLog = ServerPullLog.builder().serverPullLogKey(serverPullLogKey)
-						.pullCommand(pullCommand).build();
-				serverPullLogRepository.save(serverPullLog);
-
-				terminal.getWebSocket().send(pullCommand);
+				serverPullLog.setServerPullLogKey(serverPullLogKey);
+				
+				//save new SERVER_PULL_LOG
+				serverPullLogService.saveNew(serverPullLog);
+				
+				terminal.getWebSocket().send(serverPullLog.getPullCommand());
 
 				log.info("{}[{}] <- {}{}", terminal.getTerminalId(),
 						terminal.getWebSocket().getRemoteSocketAddress().getAddress().getHostAddress(),
-						MessageType.DEVICE_GETALLLOG_MSG, pullCommand);
+						MessageType.DEVICE_GETALLLOG_MSG, serverPullLog.getPullCommand());
 			} catch (WebsocketNotConnectedException e) {
 				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
 				terminal.setTerminalStatus(TerminalStatus.INACTIVE);
@@ -222,6 +216,11 @@ public class TerminalServiceImpl implements TerminalService {
 	@Transactional
 	public void updateTerminal(Terminal terminal) {
 		terminalRepository.updateTerminal(terminal);
+	}
+
+	@Override
+	public void save(Terminal terminal) {
+		terminalRepository.save(terminal);
 	}
 
 }

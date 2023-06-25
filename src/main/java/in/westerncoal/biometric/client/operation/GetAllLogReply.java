@@ -35,8 +35,7 @@ public class GetAllLogReply {
 	public List<Attendance> getAttendanceList(ServerPullLog serverPullLog) {
 		List<Attendance> attendanceList = new ArrayList<Attendance>();
 		for (Record rec : record) {
-			AttendanceKey attendanceKey = new AttendanceKey(rec.getEnrollid(),
-					new java.sql.Date(rec.getTime().getTime()));
+			AttendanceKey attendanceKey = new AttendanceKey(rec.getEnrollid(), rec.getTime());
 
 			Attendance attendance = Attendance.builder().AttendanceKey(attendanceKey)
 					.terminalId(serverPullLog.getServerPullLogKey().getTerminalId())

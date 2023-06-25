@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.sql.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -20,6 +21,7 @@ import in.westerncoal.biometric.enums.MessageType;
 import in.westerncoal.biometric.enums.OperationType;
 import in.westerncoal.biometric.enums.TerminalOperationStatus;
 import in.westerncoal.biometric.enums.TerminalStatus;
+import in.westerncoal.biometric.job.BiometricDataPullScheduler;
 import in.westerncoal.biometric.model.Terminal;
 import in.westerncoal.biometric.model.TerminalOperationCache;
 import in.westerncoal.biometric.model.TerminalOperationLog;
@@ -35,6 +37,7 @@ import in.westerncoal.biometric.service.ServerPullService;
 import in.westerncoal.biometric.service.TerminalService;
 import in.westerncoal.biometric.service.TerminalSendLogService;
 import in.westerncoal.biometric.util.BioUtil;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -42,11 +45,14 @@ import lombok.extern.slf4j.Slf4j;
 
 public class BiometricIntegrationServer extends WebSocketServer {
 
+	
+	@Autowired
+	TerminalService terminalService;
+	
+	
 	@Autowired
 	AttendanceService attendanceService;
 
-	@Autowired
-	TerminalService terminalService;
 
 	@Autowired
 	ServerPullService serverPullService;
@@ -61,6 +67,32 @@ public class BiometricIntegrationServer extends WebSocketServer {
 		objectMapper = BioUtil.getObjectMapper();
 		this.start();
 	}
+
+	
+	@PreDestroy
+	public void onShutdown() {
+		log.info("Biometric Integration Server shutdown IN PROGRESS, releasing,clean up of resources in progress ");
+		try {
+			this.stop(10);
+		} catch (InterruptedException e) {
+ 			e.printStackTrace();
+		}
+		// Retrieve the last terminal operation
+		for (Terminal terminal : TerminalOperationCache.getActiveTerminals()) {
+			TerminalOperationLog terminalOperationLog = TerminalOperationCache.getTerminalOperationLog(terminal);
+			if (terminalOperationLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
+				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
+				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+				terminalService.save(terminalOperationLog);
+				ServerPullLog serverPullLog = BiometricDataPullScheduler.getServerPullLogByTerminal(terminal);
+				if (serverPullLog != null)
+					serverPullLog.getPullLogLatch().countDown();// down latch
+			} else
+				continue;
+		}
+		log.info("Biometric Integration Server shut down COMPLETED");
+	}
+	
 
 	@Override
 	public void onStart() {
@@ -80,8 +112,10 @@ public class BiometricIntegrationServer extends WebSocketServer {
 			try {
 				TerminalOperationLog terminalOperationLog = TerminalOperationCache.getTerminalOperationLog(terminal);
 				terminal.setTerminalStatus(TerminalStatus.INACTIVE);
+				terminalOperationLog.setTerminal(terminal);
 				if (terminalOperationLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
-					if (terminalOperationLog.getRecordCount() == terminalOperationLog.getRecordFetched()) {
+					if (terminalOperationLog.getRecordCount() == terminalOperationLog.getRecordFetched()
+							&& terminalOperationLog.getRecordCount() != 0) {
 						terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
 
 					} else
@@ -91,6 +125,9 @@ public class BiometricIntegrationServer extends WebSocketServer {
 				}
 				terminalService.updateTerminal(terminal);
 				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+				ServerPullLog serverPullLog = BiometricDataPullScheduler.getServerPullLogByTerminal(terminal);
+				if (serverPullLog != null)
+					serverPullLog.getPullLogLatch().countDown();// down latch
 				log.info("{}[{}} -E- {} : WebSocket Error", terminal.getTerminalId(),
 						webSocket.getRemoteSocketAddress(), webSocket.getLocalSocketAddress());
 			} finally {
@@ -107,16 +144,22 @@ public class BiometricIntegrationServer extends WebSocketServer {
 			terminal.getLock().lock();
 			try {
 				TerminalOperationLog terminalOperationLog = TerminalOperationCache.getTerminalOperationLog(terminal);
-				terminalOperationLog.getTerminal().setTerminalStatus(TerminalStatus.INACTIVE);
-				if (terminalOperationLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
-					if (terminalOperationLog.getRecordCount() == terminalOperationLog.getRecordFetched())
+				terminal.setTerminalStatus(TerminalStatus.INACTIVE);
+				terminalOperationLog.setTerminal(terminal);
+				if (terminalOperationLog.getRecordCount() == terminalOperationLog.getRecordFetched()
+						&& terminalOperationLog.getRecordCount() != 0) {
+					if (terminalOperationLog.getRecordCount() == terminalOperationLog.getRecordFetched()
+							&& terminalOperationLog.getRecordCount() != 0)
 						terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
 					else
 						terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
 					terminalService.save(terminalOperationLog);
 				}
-				terminalService.save(terminal);
+				terminalService.updateTerminal(terminal);
 				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+				ServerPullLog serverPullLog = BiometricDataPullScheduler.getServerPullLogByTerminal(terminal);
+				if (serverPullLog != null)
+					serverPullLog.getPullLogLatch().countDown();// down latch
 				log.info("{}[{}} >-< {}", terminal.getTerminalId(), webSocket.getRemoteSocketAddress(),
 						webSocket.getLocalSocketAddress());
 			} finally {
@@ -144,7 +187,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 			break;
 		}
 		case DEVICE_SENDLOG_MSG: {
-			sendLog(conn, message);
+			// sendLog(conn, message);
 			break;
 		}
 		case DEVICE_SENDUSER_MSG:
@@ -179,13 +222,10 @@ public class BiometricIntegrationServer extends WebSocketServer {
 				TerminalOperationLog terminalOperationLog = TerminalOperationLog.builder()
 						.terminalId(terminal.getTerminalId()).terminal(terminal)
 						.operationType(OperationType.DEVICE_CONNECT_TERMINAL).recordCount(0).recordFetched(0)
-						
- 						.terminalOperationStatus(TerminalOperationStatus.IN_PROGRESS).build();
+						.terminalOperationStatus(TerminalOperationStatus.IN_PROGRESS).build();
 
 				// Save Terminal & Operation Log - IN PROGRESS
 				terminalService.save(terminal);
-				
-			
 
 				// Save new TerminalOperationLog
 				terminalOperationLog = terminalService.save(terminalOperationLog);
@@ -227,11 +267,10 @@ public class BiometricIntegrationServer extends WebSocketServer {
 				TerminalSend terminalSend = TerminalSend.builder().sendCommand(sendLog.getCmd())
 						.terminalId(sendLog.getSn()).build();
 				terminalSend = terminalSendLogService.saveTerminalSendLog(terminalSend);
-				
-				//Create New TerminalOperationLog
+
+				// Create New TerminalOperationLog
 				TerminalOperationLog terminalOperationLog = TerminalOperationLog.builder()
-						.terminalId(terminal.getTerminalId())
-						.terminal(terminal)
+						.terminalId(terminal.getTerminalId()).terminal(terminal)
 						.operationType(OperationType.DEVICE_SENDLOG_OPERATION_TERMINAL).sendId(terminalSend.getSendId())
 						.recordFetchOperation(true).recordCount(sendLog.getCount()).recordFetched(sendLog.getCount())
 						.terminalOperationStatus(TerminalOperationStatus.IN_PROGRESS).build();
@@ -241,7 +280,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 
 				List<Attendance> attendanceList = sendLog.getAttendanceList(terminalSend);
 				attendanceService.saveNewAttendances(attendanceList);
-				
+
 				terminalService.doExecute(terminalOperationLog, sendLogReply);
 			}
 
@@ -280,6 +319,10 @@ public class BiometricIntegrationServer extends WebSocketServer {
 
 				// Save Terminal & Operation Log - IN PROGRESS
 				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
+
+				ServerPullLog serverPullLog = BiometricDataPullScheduler.getServerPullLogByTerminal(terminal);
+				if (serverPullLog != null)
+					serverPullLog.getPullLogLatch().countDown();// down latch
 
 				log.warn("{}[{}] -> {} completed", terminal.getTerminalId(), webSocket.getRemoteSocketAddress(),
 						MessageType.DEVICE_GETALLLOG_MSG);

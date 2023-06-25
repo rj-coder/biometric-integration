@@ -3,11 +3,13 @@ package in.westerncoal.biometric.model;
  import java.sql.Timestamp;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.UuidGenerator.Style;
 
 import in.westerncoal.biometric.enums.OperationType;
 import in.westerncoal.biometric.enums.TerminalOperationStatus;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -46,7 +48,7 @@ public class TerminalOperationLog {
   	@CreationTimestamp
 	private Timestamp startOperationTime;
  	
-  	@jakarta.persistence.Column(nullable = true)
+  	@UpdateTimestamp
  	private Timestamp lastOperationTime;
 
 	@Builder.Default

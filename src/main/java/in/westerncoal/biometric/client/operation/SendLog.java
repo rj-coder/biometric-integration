@@ -25,7 +25,7 @@ public class SendLog  {
 		List<Attendance> attendanceList = new ArrayList<Attendance>();
 		for (Record rec : record) {
 			AttendanceKey attendanceKey = new AttendanceKey(rec.getEnrollid(),
-				 new java.sql.Date(rec.getTime().getTime()));
+				 rec.getTime());
 
 			Attendance attendance = Attendance.builder().AttendanceKey(attendanceKey)
 					.terminalId(terminalSendLog.getTerminalId()).sendId(terminalSendLog.getSendId()).build();

@@ -2,6 +2,7 @@ package in.westerncoal.biometric.model;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import in.westerncoal.biometric.enums.PullStatus;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -35,5 +36,7 @@ public class ServerPullLog {
 	private String pullCommand;
 
 	private Character pullType;
+	
+	private PullStatus pullStatus;
 	
 }

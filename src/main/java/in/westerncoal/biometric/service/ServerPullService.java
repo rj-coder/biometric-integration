@@ -7,8 +7,8 @@ import in.westerncoal.biometric.model.ServerPull;
 
 @Component
 public interface ServerPullService {
+	
 	ServerPull saveServerPull(ServerPull serverPull);
-
  
 	ServerPull findBy(String pullId);
  }

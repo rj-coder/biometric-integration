@@ -6,6 +6,4 @@ import in.westerncoal.biometric.model.ServerPullLogKey;
 
  public interface ServerPullLogRepository extends JpaRepository<ServerPullLog, ServerPullLogKey> {
 
- 	 
- 
 }

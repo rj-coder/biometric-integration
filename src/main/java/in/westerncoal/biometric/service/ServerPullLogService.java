@@ -8,5 +8,7 @@ import in.westerncoal.biometric.model.ServerPull;
 
 @Component
 public interface ServerPullLogService {
-	ServerPullLog saveServerPullLog(ServerPullLog serverPullLog);
+	
+	ServerPullLog saveNew(ServerPullLog serverPullLog);
+
  }

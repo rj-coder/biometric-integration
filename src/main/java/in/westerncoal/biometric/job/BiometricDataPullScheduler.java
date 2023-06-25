@@ -7,11 +7,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,7 +27,6 @@ import in.westerncoal.biometric.service.ServerPullLogService;
 import in.westerncoal.biometric.service.ServerPullService;
 import in.westerncoal.biometric.service.TerminalService;
 import in.westerncoal.biometric.util.BioUtil;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
@@ -52,15 +48,15 @@ public class BiometricDataPullScheduler {
 	@Value("${terminal.data.pull.mode}")
 	private char terminalDataPullMode;
 
-	List<ServerPullLog> serverPullLogs = new ArrayList<>();
+	private static List<ServerPullLog> serverPullLogs = new ArrayList<>();
 
-	public ServerPullLog getServerPullLogByTerminal(String terminalId) {
-		return serverPullLogs.stream().filter(t -> t.getServerPullLogKey().getTerminalId().compareTo(terminalId) == 0)
+	public static ServerPullLog getServerPullLogByTerminal(Terminal terminal) {
+		return serverPullLogs.stream()
+				.filter(t -> t.getServerPullLogKey().getTerminalId().compareTo(terminal.getTerminalId()) == 0)
 				.findFirst().orElse(null);
 	}
 
-	//@Scheduled(fixedDelay = 5000, initialDelay = 0)
-	@Transactional
+	@Scheduled(fixedDelay = 5000, initialDelay = 5000)
 	public void pullData() throws ParseException, UnknownHostException, JsonProcessingException {
 
 		// Await if previous pull is in progress
@@ -88,7 +84,9 @@ public class BiometricDataPullScheduler {
 				ServerPullLogKey serverPullLogKey = ServerPullLogKey.builder().pullId(serverPull.getPullId())
 						.terminalId(terminal.getTerminalId()).build();
 
-				ServerPullLog serverPullLog = ServerPullLog.builder().serverPullLogKey(serverPullLogKey).build();
+				ServerPullLog serverPullLog = ServerPullLog.builder().serverPullLogKey(serverPullLogKey)
+						.pullType(terminalDataPullMode)
+						.build();
 				serverPullLogs.add(serverPullLog);
 				isPullHasActiveTerminals = true;
 				terminal.getLock().unlock();
@@ -110,7 +108,7 @@ public class BiometricDataPullScheduler {
 						.recordFetchOperation(true).pullId(serverPullLog.getServerPullLogKey().getPullId())
 						.terminalId(terminal.getTerminalId()).terminal(terminal).build();
 
-				terminalService.doExecute(terminalOperationLog, serverPullLog.getPullCommand());
+				terminalService.doExecute(terminalOperationLog, serverPullLog);
 
 			}
 		}
@@ -118,18 +116,21 @@ public class BiometricDataPullScheduler {
 	}
 
 	private GetAllLog createGetAllLogCriteria(ServerPullLog serverPullLog) throws ParseException {
-		Date fromDate = null, toDate = null;
+		Date fromDate = null, toDate = BioUtil.getDateFormatter().parse(LocalDate.now().toString());
+
 		GetAllLog getAllLog = new GetAllLog();
 		switch (terminalDataPullMode) {
 		case 'A':
 			break;
-		case 'C':
-			fromDate = BioUtil.getDateFormatter().parse(LocalDate.now().withDayOfMonth(1).toString());
-			toDate = BioUtil.getDateFormatter().parse(LocalDate.now().toString());
+		case 'D': // Dynamic from DB
+			fromDate = attendanceService
+					.findMaxDateFromBiometricMachine(serverPullLog.getServerPullLogKey().getTerminalId());
 			break;
-		case 'P':
-			fromDate = BioUtil.getDateFormatter().parse(LocalDate.now().minusMonths(1).toString());
-			toDate = BioUtil.getDateFormatter().parse(LocalDate.now().toString());
+		case 'C': // Always 1 to current date
+			fromDate = BioUtil.getDateFormatter().parse(LocalDate.now().withDayOfMonth(1).toString());
+			break;
+		case 'P': // Always Previous Day + current day
+			fromDate = BioUtil.getDateFormatter().parse(LocalDate.now().minusDays(1).toString());
 			break;
 		case 'X':
 			break;

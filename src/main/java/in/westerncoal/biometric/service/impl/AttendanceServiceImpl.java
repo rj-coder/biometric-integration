@@ -1,8 +1,11 @@
 package in.westerncoal.biometric.service.impl;
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import in.westerncoal.biometric.model.Attendance;
 import in.westerncoal.biometric.repository.AttendanceRepository;
@@ -29,21 +32,12 @@ public class AttendanceServiceImpl implements AttendanceService {
 	}
 
 	@Transactional
-	public List<Attendance> saveNewAttendances(List<Attendance> attendances) {
+	public void saveNewAttendances(List<Attendance> attendances) {
+		em.persist(attendances);
+	}
 
-		int batchSize = 50; // Set the desired batch size
-
-	    for (int i = 0; i < attendances.size(); i++) {
-	        em.merge(attendances.get(i));
-
-	        if (i % batchSize == 0 && i > 0) {
-	            em.flush();
-	            em.clear();
-	        }
-	    }
-
-	    return attendances;
-
+	public Date findMaxDateFromBiometricMachine(String terminalId) {
+		return attendancerepository.findMaxDateFromBiometricMachine(terminalId);
 	}
 
 }

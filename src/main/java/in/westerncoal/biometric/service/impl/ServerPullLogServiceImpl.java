@@ -19,9 +19,10 @@ public class ServerPullLogServiceImpl implements ServerPullLogService {
 	EntityManager em;
 
 	@Transactional
- 	public ServerPullLog saveServerPullLog(ServerPullLog serverPullLog) {
- 		em.persist(serverPullLog);
+	public ServerPullLog saveNew(ServerPullLog serverPullLog) {
+		em.persist(serverPullLog);
 		return serverPullLog;
+		
 	}
 
 }
