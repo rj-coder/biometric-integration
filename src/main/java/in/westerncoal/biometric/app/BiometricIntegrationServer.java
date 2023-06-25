@@ -126,8 +126,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 				TerminalOperationLog terminalOperationLog = TerminalOperationCache.getTerminalOperationLog(terminal);
 				terminal.setTerminalStatus(TerminalStatus.INACTIVE);
 				terminalOperationLog.setTerminal(terminal);
-				if (terminalOperationLog.getRecordCount() == terminalOperationLog.getRecordFetched()
-						&& terminalOperationLog.getRecordCount() != 0) {
+				if (terminalOperationLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
 					if (terminalOperationLog.getRecordCount() == terminalOperationLog.getRecordFetched()
 							&& terminalOperationLog.getRecordCount() != 0)
 						terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.COMPLETED);
