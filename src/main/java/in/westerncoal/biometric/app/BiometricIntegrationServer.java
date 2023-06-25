@@ -48,23 +48,25 @@ import lombok.extern.slf4j.Slf4j;
 
 public class BiometricIntegrationServer extends WebSocketServer {
 
-	@Autowired
 	TerminalService terminalService;
 
-	@Autowired
 	AttendanceService attendanceService;
 
-	@Autowired
 	ServerPullService serverPullService;
 
-	@Autowired
 	TerminalSendLogService terminalSendLogService;
 
 	private ObjectMapper objectMapper;
 
-	public BiometricIntegrationServer(@Value("${websocket.port}") int WS_PORT) {
+	public BiometricIntegrationServer(@Value("${websocket.port}") int WS_PORT, TerminalService terminalService,
+			AttendanceService attendanceService, ServerPullService serverPullService,
+			TerminalSendLogService terminalSendLogService) {
 		super(new InetSocketAddress(WS_PORT));
 		objectMapper = BioUtil.getObjectMapper();
+		this.terminalService = terminalService;
+		this.attendanceService = attendanceService;
+		this.serverPullService = serverPullService;
+		this.terminalSendLogService = terminalSendLogService;
 		this.start();
 	}
 
@@ -195,10 +197,10 @@ public class BiometricIntegrationServer extends WebSocketServer {
 			TerminalRegister terminalRegister = objectMapper.readValue(message, TerminalRegister.class);
 
 			TerminalOperationLog cacheLog = TerminalOperationCache.getTerminalOperationLog(terminalRegister.getSn());
-			if (cacheLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
+			if (cacheLog != null && cacheLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
 				log.info("{}[{}] - Previous TxnLog In Progress", terminalRegister.getSn(),
 						websocket.getRemoteSocketAddress().getAddress());
-				return; //do not accept connection if previous connection is not closed
+				return; // do not accept connection if previous connection is not closed
 			}
 
 			log.info("{}[{}] -> {}{}", terminalRegister.getSn(), websocket.getRemoteSocketAddress().getAddress(),
@@ -235,7 +237,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 				log.info("{}[{}] <-> {}[{}]", terminal.getTerminalId(),
 						terminal.getWebSocket().getRemoteSocketAddress(), InetAddress.getLocalHost().getHostName(),
 						websocket.getLocalSocketAddress());
- 			} finally {
+			} finally {
 				terminal.getLock().unlock();
 			}
 		} catch (JsonProcessingException e3) {
