@@ -13,7 +13,7 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 public class Record {
 	private Integer enrollid;
-	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss",timezone = "Asia/Calcutta")
   	private Timestamp time;
 	private Integer mode;
 	private Integer inout;

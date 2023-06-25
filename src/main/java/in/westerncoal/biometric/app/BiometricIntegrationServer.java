@@ -235,7 +235,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 				log.info("{}[{}] <-> {}[{}]", terminal.getTerminalId(),
 						terminal.getWebSocket().getRemoteSocketAddress(), InetAddress.getLocalHost().getHostName(),
 						websocket.getLocalSocketAddress());
-			} finally {
+ 			} finally {
 				terminal.getLock().unlock();
 			}
 		} catch (JsonProcessingException e3) {

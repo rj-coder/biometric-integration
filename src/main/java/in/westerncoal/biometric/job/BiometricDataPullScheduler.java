@@ -56,7 +56,7 @@ public class BiometricDataPullScheduler {
 				.findFirst().orElse(null);
 	}
 
-	@Scheduled(cron = "0 0 3,9,11,15,19,23 * * ?",fixedDelay = 60000,initialDelay = 60000)
+	@Scheduled(fixedDelay = 5000,initialDelay = 1000)
 	public void pullData() throws ParseException, UnknownHostException, JsonProcessingException {
 
 		// Await if previous pull is in progress
