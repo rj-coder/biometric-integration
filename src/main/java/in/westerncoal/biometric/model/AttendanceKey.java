@@ -26,8 +26,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @Data
 public class AttendanceKey {
+	
 	@Column(length = 8)
 	private Integer personnelNumber;
+	
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss",timezone = "Asia/Calcutta")
  	private Timestamp punchDateTime;
 }

@@ -1,6 +1,5 @@
 package in.westerncoal.biometric.service;
 
-import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -16,8 +15,7 @@ public interface AttendanceService {
 	List<Attendance> saveAttendances(List<Attendance> attendances);
 
 	void saveNewAttendances(List<Attendance> attendances);
-	
-	Date findMaxDateFromBiometricMachine(@Param("terminalId") String terminalId);
 
+	Date findMaxDateFromBiometricMachine(@Param("terminalId") String terminalId);
 
 }

@@ -1,11 +1,10 @@
 package in.westerncoal.biometric.service.impl;
 
-import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
+import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import in.westerncoal.biometric.model.Attendance;
 import in.westerncoal.biometric.repository.AttendanceRepository;
@@ -33,7 +32,18 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 	@Transactional
 	public void saveNewAttendances(List<Attendance> attendances) {
-		em.persist(attendances);
+		Session session = em.unwrap(Session.class);
+
+		// Create and configure the batch
+		session.setJdbcBatchSize(attendances.size());
+
+		// Execute batch operations
+		for (Attendance attendance : attendances)
+			session.persist(attendance);
+
+		// Flush and clear any remaining entities in the batch
+		session.flush();
+		session.clear();
 	}
 
 	public Date findMaxDateFromBiometricMachine(String terminalId) {

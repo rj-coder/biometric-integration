@@ -3,17 +3,12 @@ package in.westerncoal.biometric.app;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.sql.Date;
-import java.time.LocalDateTime;
 import java.util.List;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import in.westerncoal.biometric.client.operation.TerminalRegister;
@@ -40,7 +35,6 @@ import in.westerncoal.biometric.service.TerminalService;
 import in.westerncoal.biometric.service.TerminalSendLogService;
 import in.westerncoal.biometric.util.BioUtil;
 import jakarta.annotation.PreDestroy;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
