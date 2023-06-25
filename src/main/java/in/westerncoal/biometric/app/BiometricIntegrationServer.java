@@ -40,6 +40,7 @@ import in.westerncoal.biometric.service.TerminalService;
 import in.westerncoal.biometric.service.TerminalSendLogService;
 import in.westerncoal.biometric.util.BioUtil;
 import jakarta.annotation.PreDestroy;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -189,8 +190,16 @@ public class BiometricIntegrationServer extends WebSocketServer {
 	}
 
 	private void deviceRegister(WebSocket websocket, String message) throws UnknownHostException {
+
 		try {
 			TerminalRegister terminalRegister = objectMapper.readValue(message, TerminalRegister.class);
+
+			TerminalOperationLog cacheLog = TerminalOperationCache.getTerminalOperationLog(terminalRegister.getSn());
+			if (cacheLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
+				log.info("{}[{}] - Previous TxnLog In Progress", terminalRegister.getSn(),
+						websocket.getRemoteSocketAddress().getAddress());
+				return; //do not accept connection if previous connection is not closed
+			}
 
 			log.info("{}[{}] -> {}{}", terminalRegister.getSn(), websocket.getRemoteSocketAddress().getAddress(),
 					terminalRegister.getMessageType(), message);
