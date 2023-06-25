@@ -12,6 +12,8 @@ import org.java_websocket.server.WebSocketServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import in.westerncoal.biometric.client.operation.TerminalRegister;
@@ -45,14 +47,11 @@ import lombok.extern.slf4j.Slf4j;
 
 public class BiometricIntegrationServer extends WebSocketServer {
 
-	
 	@Autowired
 	TerminalService terminalService;
-	
-	
+
 	@Autowired
 	AttendanceService attendanceService;
-
 
 	@Autowired
 	ServerPullService serverPullService;
@@ -68,31 +67,15 @@ public class BiometricIntegrationServer extends WebSocketServer {
 		this.start();
 	}
 
-	
 	@PreDestroy
-	public void onShutdown() {
-		log.info("Biometric Integration Server shutdown IN PROGRESS, releasing,clean up of resources in progress ");
+	public void cleanUp() {
 		try {
 			this.stop(10);
+			log.info("Clean UP!!!");
 		} catch (InterruptedException e) {
- 			e.printStackTrace();
+			e.printStackTrace();
 		}
-		// Retrieve the last terminal operation
-		for (Terminal terminal : TerminalOperationCache.getActiveTerminals()) {
-			TerminalOperationLog terminalOperationLog = TerminalOperationCache.getTerminalOperationLog(terminal);
-			if (terminalOperationLog.getTerminalOperationStatus().equals(TerminalOperationStatus.IN_PROGRESS)) {
-				terminalOperationLog.setTerminalOperationStatus(TerminalOperationStatus.ERROR);
-				TerminalOperationCache.updateTerminalOperation(terminalOperationLog);
-				terminalService.save(terminalOperationLog);
-				ServerPullLog serverPullLog = BiometricDataPullScheduler.getServerPullLogByTerminal(terminal);
-				if (serverPullLog != null)
-					serverPullLog.getPullLogLatch().countDown();// down latch
-			} else
-				continue;
-		}
-		log.info("Biometric Integration Server shut down COMPLETED");
 	}
-	
 
 	@Override
 	public void onStart() {
