@@ -170,7 +170,7 @@ public class BiometricIntegrationServer extends WebSocketServer {
 			break;
 		}
 		case DEVICE_SENDLOG_MSG: {
-			// sendLog(conn, message);
+			sendLog(conn, message);
 			break;
 		}
 		case DEVICE_SENDUSER_MSG:
