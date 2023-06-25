@@ -6,11 +6,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.UuidGenerator.Style;
 
-import com.querydsl.sql.Column;
-
 import in.westerncoal.biometric.enums.OperationType;
 import in.westerncoal.biometric.enums.TerminalOperationStatus;
-import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;

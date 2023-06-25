@@ -11,7 +11,7 @@ public interface TerminalOperationLogRepository extends JpaRepository<TerminalOp
 
 	@Modifying
 	@Query("UPDATE TerminalOperationLog tol " +
- 		       "SET tol.lastOperationTime = COALESCE(:#{#terminalOperationLog.lastOperationTime}, NULL), " +
+ 		       "SET tol.lastOperationTime = :#{#terminalOperationLog.lastOperationTime}, " +
 		       "tol.operationType = :#{#terminalOperationLog.operationType}, " +
 		       "tol.pullId = :#{#terminalOperationLog.pullId}, " +
 		       "tol.recordCount = :#{#terminalOperationLog.recordCount}, " +
