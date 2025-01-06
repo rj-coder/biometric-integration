@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "terminal_send", schema = "bio")
+@Table(name = "terminal_send",schema="fbm2")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor

@@ -1,6 +1,7 @@
 package in.westerncoal.biometric.model;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.Objects;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -18,15 +19,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Entity
-@Table(name = "terminal", schema = "bio")
+@Table(name = "terminal",schema="fbm2")
+@Builder 
 @Getter
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Data
-@Builder
+@Setter
+@AllArgsConstructor
 @NoArgsConstructor
 public class Terminal  {
 	@Transient
@@ -45,7 +48,7 @@ public class Terminal  {
 	private TerminalStatus terminalStatus = TerminalStatus.ACTIVE;
 
 	@UpdateTimestamp
-	private Date lastAccessTimestamp;
+	private Timestamp lastAccessTimestamp;
 	
 	private String terminalAddress;
 	

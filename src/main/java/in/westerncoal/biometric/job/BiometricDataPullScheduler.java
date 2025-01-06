@@ -56,7 +56,7 @@ public class BiometricDataPullScheduler {
 				.findFirst().orElse(null);
 	}
 
-	@Scheduled(fixedDelay = 5000,initialDelay = 1000)
+	//@Scheduled(fixedDelay = 500000,initialDelay = 1000)
 	public void pullData() throws ParseException, UnknownHostException, JsonProcessingException {
 
 		// Await if previous pull is in progress
@@ -130,7 +130,7 @@ public class BiometricDataPullScheduler {
 			fromDate = BioUtil.getDateFormatter().parse(LocalDate.now().withDayOfMonth(1).toString());
 			break;
 		case 'P': // Always Previous Day + current day
-			fromDate = BioUtil.getDateFormatter().parse(LocalDate.now().minusDays(1).toString());
+			fromDate = BioUtil.getDateFormatter().parse(LocalDate.now().minusDays(30).toString());
 			break;
 		case 'X':
 			break;

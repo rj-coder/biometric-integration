@@ -39,7 +39,8 @@ public class AttendanceServiceImpl implements AttendanceService {
 
 		// Execute batch operations
 		for (Attendance attendance : attendances)
-			session.persist(attendance);
+			session.save(attendance);
+			
 
 		// Flush and clear any remaining entities in the batch
 		session.flush();

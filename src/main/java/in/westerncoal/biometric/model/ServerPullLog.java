@@ -17,7 +17,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Lock;
 
 @Entity
-@Table(name = "server_pull_log")
+@Table(name = "server_pull_log",schema="fbm2")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor

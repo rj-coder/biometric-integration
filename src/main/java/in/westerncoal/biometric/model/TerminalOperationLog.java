@@ -24,7 +24,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "terminal_operation_log")
+@Table(name = "terminal_operation_log",schema="fbm2")
 @Builder
 @Getter
 @Setter

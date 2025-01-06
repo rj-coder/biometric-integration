@@ -1,6 +1,5 @@
 package in.westerncoal.biometric.repository;
 
-import java.time.LocalDate;
 import java.util.Date;
 
 import org.springframework.data.jpa.repository.JpaRepository;

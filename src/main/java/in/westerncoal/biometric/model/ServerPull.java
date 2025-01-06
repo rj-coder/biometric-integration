@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "server_pull", schema = "bio")
+@Table(name = "server_pull",schema="fbm2")
 @Builder
 @AllArgsConstructor
 @Getter

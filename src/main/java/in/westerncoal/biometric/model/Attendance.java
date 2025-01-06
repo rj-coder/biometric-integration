@@ -1,6 +1,7 @@
 package in.westerncoal.biometric.model;
 
 import java.sql.Date;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Immutable;
@@ -13,7 +14,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "attendance", schema = "bio")
+@Table(name = "attendance",schema="fbm2")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -33,6 +34,5 @@ public class Attendance{
 	private String terminalId;
 
 	@CreationTimestamp
-	private Date createTimestamp;
-
+	private LocalDateTime createTimestamp;
 }
